@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pulse">
+  <defs>
+    <radialGradient id="glow" cx="30%" cy="22%" r="72%">
+      <stop offset="0" stop-color="#d8ff4a" stop-opacity="0.22" />
+      <stop offset="1" stop-color="#d8ff4a" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0a0b09" />
+  <rect width="64" height="64" rx="14" fill="url(#glow)" />
+  <path d="M32 12 L52 32 L32 52 L12 32 Z" fill="#d8ff4a" />
+</svg>

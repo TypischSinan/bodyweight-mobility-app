@@ -1,0 +1,21 @@
+{
+  "name": "pulse-10-minute-training",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pulse – 16 gerätefreie 10-Minuten-Sessions mit Demo-Videos, Timer und Trainingslog.",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "start": "node scripts/dev.mjs",
+    "validate": "node scripts/validate.mjs",
+    "validate:media": "node scripts/validate.mjs --media",
+    "framing": "node scripts/framing.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "jpeg-js": "^0.4.4"
+  },
+  "license": "MIT"
+}

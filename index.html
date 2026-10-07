@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0b09" />
+    <meta
+      name="description"
+      content="Pulse — 16 gerätefreie 10-Minuten-Sessions mit Demo-Videos, Timer und Trainingslog."
+    />
+    <title>Pulse — 10 Minute Training</title>
+
+    <!-- Installation („Zum Home-Bildschirm") – iOS nutzt die apple-Meta-Angaben,
+         Android/Chrome das Manifest. -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pulse" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#sessions" id="brand-link">
+          <span class="brand-mark" aria-hidden="true">◆</span>
+          <span class="brand-name">PULSE</span>
+        </a>
+      </header>
+
+      <main>
+        <!-- LIBRARY ------------------------------------------------------ -->
+        <section id="library-view" class="view" aria-labelledby="library-heading">
+          <h1 id="library-heading" class="hero">Wähle eine<br /><span class="accent">Session.</span></h1>
+
+          <div class="filter-row">
+            <div class="segment" id="category-filters" role="group" aria-label="Kategorie filtern"></div>
+            <label class="select-wrap">
+              <span class="sr-only">Fokus filtern</span>
+              <select class="select" id="focus-select"></select>
+            </label>
+          </div>
+
+          <div class="section-head">
+            <h2>Sessions</h2>
+            <span class="section-count" id="result-count"></span>
+          </div>
+          <div class="bundle-list" id="bundle-list"></div>
+          <p class="empty-state" id="library-empty" hidden>
+            Keine Session passt zu dieser Kombination.
+            <button class="link-button" id="library-reset-filters" type="button">Filter zurücksetzen</button>
+          </p>
+        </section>
+
+        <!-- DETAIL ------------------------------------------------------- -->
+        <!-- Der Zurück-Knopf sitzt neben dem Titel (eine Zeile), nicht darüber. -->
+        <section id="detail-view" class="view detail" hidden aria-labelledby="detail-title">
+          <div class="detail-head">
+            <p class="eyebrow" id="detail-category">Kraft · Einsteiger</p>
+            <div class="title-row">
+              <button class="icon-button back" id="detail-back" type="button" aria-label="Zurück zu den Sessions">←</button>
+              <h2 id="detail-title">Full Body Basics</h2>
+            </div>
+            <p class="meta-line" id="detail-meta-line"></p>
+            <p class="detail-summary" id="detail-summary"></p>
+          </div>
+
+          <div class="plan" id="detail-plan"></div>
+
+          <button class="control-button primary wide" id="detail-start" type="button">
+            <span aria-hidden="true">▶</span> Session starten
+          </button>
+        </section>
+
+        <!-- PLAYER ------------------------------------------------------- -->
+        <section id="player-view" class="view player" hidden aria-labelledby="player-title">
+          <div class="player-top">
+            <button class="icon-button back" id="player-back" type="button" aria-label="Zurück zum Ablauf">←</button>
+            <div class="player-top-info">
+              <p class="eyebrow" id="player-block">Kraft</p>
+              <h2 class="player-title" id="player-title">Full Body Basics</h2>
+            </div>
+            <p class="position"><span id="player-index">01</span><i>/</i><span id="player-total">10</span></p>
+          </div>
+
+          <div class="timer-panel">
+            <div class="timer-digits">
+              <span id="timer">60</span>
+              <span class="timer-unit">SEK</span>
+            </div>
+            <div class="timer-bars">
+              <div class="bar-track" aria-hidden="true"><span id="exercise-progress"></span></div>
+              <div class="bar-track thin" aria-hidden="true"><span id="session-progress"></span></div>
+              <p class="timer-caption"><span id="session-left">10:00</span> übrig</p>
+            </div>
+          </div>
+
+          <figure class="media">
+            <video
+              id="exercise-media"
+              autoplay
+              loop
+              muted
+              playsinline
+              preload="metadata"
+              aria-label="Übungsdemo"
+            ></video>
+            <img id="media-poster" alt="" hidden />
+            <div class="media-shade" aria-hidden="true"></div>
+            <figcaption class="media-info">
+              <span class="badge" id="media-kind">Kraft</span>
+              <strong id="exercise-name">Squat</strong>
+            </figcaption>
+            <p class="media-note" id="media-note" hidden></p>
+          </figure>
+
+          <div class="cue-line">
+            <span id="cue-text">Knie über die Fußspitzen</span>
+            <button
+              class="details-toggle"
+              id="details-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="details-panel"
+            >
+              Details
+            </button>
+          </div>
+
+          <div class="details-panel" id="details-panel" hidden>
+            <div><span>Muskeln</span><b id="exercise-sub">Quadrizeps &amp; Gesäß</b></div>
+            <div><span>Achte auf</span><b id="mistake-text"></b></div>
+            <div><span>Atmung</span><b id="breath-text"></b></div>
+          </div>
+
+          <div class="controls">
+            <button class="control-button ghost" id="prev-button" type="button" aria-label="Vorherige Übung" title="Vorherige Übung (←)">
+              ↺
+            </button>
+            <button class="control-button primary" id="start-button" type="button" title="Start / Pause (Leertaste)">
+              <span id="start-icon" aria-hidden="true">▶</span><span id="start-label">Start</span>
+            </button>
+            <button class="control-button ghost" id="next-button" type="button" aria-label="Nächste Übung" title="Nächste Übung (→)">
+              →
+            </button>
+          </div>
+
+          <div class="player-foot">
+            <p class="next-line">Danach <strong id="next-name">Glute Bridge</strong></p>
+            <div class="player-options">
+              <button class="pill-toggle" id="sound-toggle" type="button" aria-pressed="true" title="Ton ein/aus">Ton</button>
+              <button class="pill-toggle" id="gender-toggle" type="button" title="Demo-Aufnahme wechseln">Mann</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- DASHBOARD ---------------------------------------------------- -->
+        <section id="dashboard-view" class="view" hidden aria-labelledby="dashboard-heading">
+          <div class="dashboard-head">
+            <h2 id="dashboard-heading" class="hero small">Weiter<br /><span class="accent">dranbleiben.</span></h2>
+            <div class="streak-badge">
+              <b id="streak-count">0</b>
+              <small>Tage<br />Streak</small>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card"><strong id="week-sessions">0</strong><span>Sessions · 7 Tage</span></div>
+            <div class="stat-card"><strong id="week-minutes">0</strong><span>Minuten · 7 Tage</span></div>
+            <div class="stat-card"><strong id="total-sessions">0</strong><span>Sessions gesamt</span></div>
+            <div class="stat-card"><strong id="total-minutes">0</strong><span>Minuten gesamt</span></div>
+          </div>
+
+          <div class="section-head"><h2>Letzte 7 Tage</h2><span class="section-count" id="week-label"></span></div>
+          <div class="week-chart" id="week-chart"></div>
+
+          <div class="section-head"><h2>Zuletzt gemacht</h2></div>
+          <div class="history-list" id="history-list"></div>
+
+          <p class="install-hint" id="install-hint" hidden>
+            Tipp: <b>Teilen → „Zum Home-Bildschirm"</b> – dann startet Pulse als App und der Fortschritt bleibt
+            dauerhaft gespeichert.
+          </p>
+
+          <div class="data-row" id="data-row">
+            <button class="link-action" id="export-data" type="button">Fortschritt sichern</button>
+            <button class="link-action" id="import-data" type="button">Sicherung laden</button>
+            <button class="link-action danger" id="clear-history" type="button">Zurücksetzen</button>
+            <input type="file" id="import-file" accept="application/json,.json" hidden />
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal" id="completion-modal" hidden role="dialog" aria-modal="true" aria-labelledby="completion-title">
+      <div class="modal-card">
+        <p class="eyebrow">Session geschafft</p>
+        <h2 id="completion-title">Stark gemacht.</h2>
+        <dl class="modal-stats" id="completion-stats"></dl>
+        <button class="control-button primary wide" id="completion-close" type="button">Weiter</button>
+      </div>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Hauptnavigation">
+      <button class="nav-item is-active" data-tab="sessions" type="button"><span aria-hidden="true">▦</span>Sessions</button>
+      <button class="nav-item" data-tab="training" type="button"><span aria-hidden="true">▶</span>Training</button>
+      <button class="nav-item" data-tab="dashboard" type="button"><span aria-hidden="true">◔</span>Dashboard</button>
+    </nav>
+
+    <p class="sr-only" id="live-region" aria-live="polite"></p>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
