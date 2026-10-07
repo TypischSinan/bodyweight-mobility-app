@@ -1,3 +1,4 @@
+# Dependencies, local tooling and OS clutter
 node_modules/
 .freebuff/
 .DS_Store

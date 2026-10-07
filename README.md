@@ -8,13 +8,18 @@ plain HTML, CSS and ES modules.
 [![Dependencies: none](https://img.shields.io/badge/dependencies-none-D8FF4A?labelColor=0A0B09)](package.json)
 [![Languages: DE / EN](https://img.shields.io/badge/languages-DE%20%2F%20EN-D8FF4A?labelColor=0A0B09)](src/i18n.js)
 
-| Sessions | Set-up | Install |
-| --- | --- | --- |
-| ![Session list](docs/screenshots/library.png) | ![Session plan](docs/screenshots/plan.png) | ![Running session](docs/screenshots/player.png) |
-| 16 sessions, filtered by category and focus | Every session as a block-by-block plan with times | Big timer, demo clip, one coaching cue, details on request |
+<p align="center">
+  <img src="docs/screenshots/library.png" width="270" alt="Session list: 16 sessions with a category switch and a focus filter" />
+  <img src="docs/screenshots/plan.png" width="270" alt="Session plan: blocks with durations and the 20-second rest after each exercise" />
+</p>
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" alt="Training log with streak, 7-day chart and recent sessions" width="300" />
+  <img src="docs/screenshots/player.png" width="270" alt="Player: big timer, demo clip, one coaching cue and a details panel" />
+  <img src="docs/screenshots/dashboard.png" width="270" alt="Training log: streak, seven-day chart and the recent sessions" />
+</p>
+
+<p align="center">
+  <sub>Library · plan · player · training log — the app on an iPhone 16 Pro Max (440 × 956 CSS px)</sub>
 </p>
 
 ## What it is

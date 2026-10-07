@@ -1,3 +1,4 @@
+<!-- Pulse mark: the same diamond as the app header. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pulse">
   <defs>
     <radialGradient id="glow" cx="30%" cy="22%" r="72%">
