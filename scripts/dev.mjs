@@ -54,7 +54,7 @@ const server = createServer((req, res) => {
   const file = resolveFile(req.url ?? "/");
   if (!file) {
     res.writeHead(404, { "content-type": "text/plain; charset=utf-8" });
-    res.end("404 – nicht gefunden");
+    res.end("404 – not found");
     console.log(`404 ${req.method} ${req.url}`);
     return;
   }
@@ -70,13 +70,13 @@ const server = createServer((req, res) => {
 });
 
 server.listen(port, host, () => {
-  console.log(`Pulse läuft auf http://${host}:${port}`);
-  console.log("Beenden mit Ctrl+C");
+  console.log(`Pulse is running on http://${host}:${port}`);
+  console.log("Stop with Ctrl+C");
 });
 
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
-    console.error(`Port ${port} ist belegt. Mit PORT=<nummer> npm run dev einen anderen wählen.`);
+    console.error(`Port ${port} is in use. Pick another one with PORT=<number> npm run dev.`);
   } else {
     console.error(error);
   }

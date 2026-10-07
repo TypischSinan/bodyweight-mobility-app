@@ -570,7 +570,7 @@ export function bundleWork(bundle, catalog = EXERCISES) {
   return bundle.blocks.flatMap((block) =>
     block.items.map((item) => {
       const exercise = catalog[item.id];
-      if (!exercise) throw new Error(`Unbekannte Übung "${item.id}" in Session "${bundle.id}"`);
+      if (!exercise) throw new Error(`Unknown exercise "${item.id}" in session "${bundle.id}"`);
       return { id: item.id, exercise, block: block.label };
     }),
   );

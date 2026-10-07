@@ -38,7 +38,7 @@ let jpeg;
 try {
   jpeg = require("jpeg-js");
 } catch {
-  console.error("jpeg-js fehlt – einmalig `npm install` ausführen (nur Dev-Abhängigkeit).");
+  console.error("jpeg-js is missing – run `npm install` once (dev dependency only).");
   process.exit(1);
 }
 
@@ -163,11 +163,11 @@ async function measureClip(id, exercise) {
     .filter((name) => name.endsWith(".jpg"))
     .sort()
     .map((name) => join(frameDir, name));
-  if (!frames.length) throw new Error("keine Frames extrahiert");
+  if (!frames.length) throw new Error("no frames extracted");
 
   let box = null;
   for (const frame of frames) box = union(box, frameBox(frame, MEASURE_THRESHOLD));
-  if (!box) throw new Error("kein Inhalt erkannt");
+  if (!box) throw new Error("no content detected");
 
   return { frames, box: padBox(box) };
 }
@@ -181,7 +181,7 @@ async function measurePoster(id, exercise) {
   writeFileSync(file, Buffer.from(await response.arrayBuffer()));
   const box = frameBox(file, MEASURE_THRESHOLD);
   rmSync(file, { force: true });
-  if (!box) throw new Error("kein Inhalt erkannt");
+  if (!box) throw new Error("no content detected");
   return { frames: [], box: padBox(box) };
 }
 
@@ -212,12 +212,12 @@ function solveFraming(box) {
 const mapToPanel = (value, origin, zoom) => origin + (value - origin) * zoom;
 
 const useFfmpeg = hasFfmpeg();
-if (!useFfmpeg) console.warn("ffmpeg nicht gefunden – nutze nur die Standbilder (konservativer).\n");
+if (!useFfmpeg) console.warn("ffmpeg not found – using the still images only (more conservative).\n");
 
 const ids = only ?? Object.keys(EXERCISES);
 for (const id of ids) {
   if (!EXERCISES[id]) {
-    console.error(`Unbekannte Übung "${id}" – --only erwartet IDs aus src/data/exercises.js.`);
+    console.error(`Unknown exercise "${id}" – --only expects ids from src/data/exercises.js.`);
     process.exit(1);
   }
 }
@@ -282,7 +282,7 @@ for (const id of ids) {
     objectX: Number((visibleWidth >= 0.999 ? 0.5 : windowLeft / (1 - visibleWidth)).toFixed(4)),
   };
   report.push(
-    `${id.padEnd(52)} zoom ${result.zoom.toFixed(2)}  Fenster ${(windowLeft * 100).toFixed(0)}–${((windowLeft + visibleWidth) * 100).toFixed(0)}%  Inhalt ${(box.x0 * 100).toFixed(0)}–${(box.x1 * 100).toFixed(0)}% / ${(box.y0 * 100).toFixed(0)}–${(box.y1 * 100).toFixed(0)}%  (${measured[id].frames.length} Frames)`,
+    `${id.padEnd(52)} zoom ${result.zoom.toFixed(2)}  window ${(windowLeft * 100).toFixed(0)}–${((windowLeft + visibleWidth) * 100).toFixed(0)}%  content ${(box.x0 * 100).toFixed(0)}–${(box.x1 * 100).toFixed(0)}% / ${(box.y0 * 100).toFixed(0)}–${(box.y1 * 100).toFixed(0)}%  (${measured[id].frames.length} frames)`,
   );
 }
 
@@ -320,15 +320,15 @@ const all = Object.values(framing);
 const average = all.reduce((sum, f) => sum + f.zoom, 0) / all.length;
 console.log(report.join("\n"));
 console.log(
-  `\n${ids.length} ${only ? "von " + Object.keys(EXERCISES).length + " " : ""}Übungen · Ø Zoom ${average.toFixed(2)}x · Rahmen ${aspect}:1 (Fenster ${(visibleWidth * 100).toFixed(1)}% der Breite)`,
+  `\n${ids.length} ${only ? "of " + Object.keys(EXERCISES).length + " " : ""}exercises · avg zoom ${average.toFixed(2)}x · frame ${aspect}:1 (window ${(visibleWidth * 100).toFixed(1)}% of the width)`,
 );
-console.log(`Quelle: ${useFfmpeg ? "ganze Clips (ffmpeg, 6 fps)" : "Standbilder"}`);
-console.log(`Gegenprüfung: ${checkedFrames} Frames, ${violations.length} mit Randkontakt`);
+console.log(`Source: ${useFfmpeg ? "whole clips (ffmpeg, 6 fps)" : "still images"}`);
+console.log(`Re-check: ${checkedFrames} frames, ${violations.length} touching an edge`);
 
 if (violations.length) {
   const worst = violations.sort((a, b) => b.overflow - a.overflow).slice(0, 10);
-  worst.forEach((v) => console.error(`  ${v.id}: ragt ${(v.overflow * 100).toFixed(1)} % über den Rand`));
-  console.error("Rahmung abgebrochen – bitte PAD/SAFETY erhöhen und erneut rechnen.");
+  worst.forEach((v) => console.error(`  ${v.id}: overflows the edge by ${(v.overflow * 100).toFixed(1)} %`));
+  console.error("Framing aborted – raise PAD/SAFETY and recompute.");
   process.exit(1);
 }
 
@@ -354,4 +354,4 @@ export const PANEL_ASPECT = "${aspect}";
 `;
 
 writeFileSync(new URL("../src/data/framing.js", import.meta.url), header);
-console.log("geschrieben: src/data/framing.js");
+console.log("written: src/data/framing.js");

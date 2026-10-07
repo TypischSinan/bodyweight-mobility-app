@@ -15,7 +15,7 @@ export function createSessionTimer({
   now = () => performance.now(),
 }) {
   if (!Array.isArray(sequence) || sequence.length === 0) {
-    throw new Error("Der Timer braucht mindestens eine Übung.");
+    throw new Error("The timer needs at least one exercise.");
   }
 
   const durations = sequence.map((item) => item.seconds * 1000);
