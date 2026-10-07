@@ -1,5 +1,7 @@
 # Dependencies, local tooling and OS clutter
 node_modules/
 .freebuff/
+.wrangler/
+.dev.vars
 .DS_Store
 Thumbs.db

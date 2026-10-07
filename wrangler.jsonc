@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bodyweight-mobility-app",
+  "compatibility_date": "2026-10-06",
+  "observability": {
+    "enabled": true
+  },
+  // Pure static site: no build step, no Worker code — only static assets.
+  // The directory is the repo root, `.assetsignore` keeps everything
+  // that is not part of the app (node_modules, tooling, docs, …) out of the upload.
+  "assets": {
+    "directory": ".",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

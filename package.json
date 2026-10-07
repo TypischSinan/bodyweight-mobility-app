@@ -15,7 +15,8 @@
     "node": ">=20"
   },
   "devDependencies": {
-    "jpeg-js": "^0.4.4"
+    "jpeg-js": "^0.4.4",
+    "wrangler": "^4.148.0"
   },
   "license": "MIT"
 }
