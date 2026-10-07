@@ -1,14 +1,14 @@
 /**
- * Service Worker: legt die App-Hülle in den Cache, damit Pulse nach dem
- * „Zum Home-Bildschirm"-Verknüpfen auch ohne Netz startet (Timer, Plan,
- * Trainingslog funktionieren offline; nur die Demo-Clips kommen vom CDN).
+ * Service worker: puts the app shell into the cache so Pulse starts without a
+ * network after being added to the home screen (timer, plan and training log work
+ * offline; only the demo clips come from the CDN).
  *
- * Strategie: eigene Dateien kommen zuerst aus dem Netz (damit ein Update sofort
- * greift und HTML und Module nie auseinanderlaufen) und nur bei fehlender
- * Verbindung aus dem Cache. Fremdes (Videos, Fonts) wird nie angefasst – die
- * Demo-Clips sind zu groß und liegen auf einem anderen Host.
+ * Strategy: own files come from the network first (so an update takes effect
+ * immediately and HTML and modules can never drift apart) and only fall back to
+ * the cache when there is no connection. Foreign requests (videos, fonts) are
+ * never touched – the demo clips are too large and live on another host.
  */
-const VERSION = "pulse-v3";
+const VERSION = "pulse-v4";
 
 const SHELL = [
   "./",
@@ -23,16 +23,19 @@ const SHELL = [
   "./src/timer.js",
   "./src/audio.js",
   "./src/storage.js",
+  "./src/i18n.js",
   "./src/data/exercises.js",
   "./src/data/bundles.js",
   "./src/data/framing.js",
+  "./src/data/en.exercises.js",
+  "./src/data/en.bundles.js",
 ];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(VERSION);
-      // Einzelne Fehlschläge dürfen die Installation nicht kippen.
+      // Individual failures must not break the installation.
       await Promise.all(
         SHELL.map((url) => cache.add(new Request(url, { cache: "reload" })).catch(() => undefined)),
       );
@@ -56,8 +59,8 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return; // CDN (Videos, Fonts) nicht anfassen
-  if (request.headers.has("range")) return; // Teilabrufe nie aus dem Cache beantworten
+  if (url.origin !== self.location.origin) return; // do not touch the CDN (videos, fonts)
+  if (request.headers.has("range")) return; // never serve range requests from the cache
 
   const isDocument = request.mode === "navigate" || request.destination === "document";
 

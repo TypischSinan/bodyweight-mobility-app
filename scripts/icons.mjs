@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * App-Icons erzeugen (ohne externe Abhängigkeit, nur Node-Standardbibliothek).
+ * Generate the app icons (no external dependency, Node standard library only).
  *
- * Für „Zum Home-Bildschirm" braucht iOS ein apple-touch-icon (180×180, deckend),
- * der Browser zusätzlich manifest-Icons in 192 und 512 – letzteres auch als
- * „maskable" Variante mit mehr Rand, damit Android/WebAPK nichts anschneidet.
+ * For “Add to Home Screen” iOS needs an apple-touch-icon (180×180, opaque) and
+ * the browser additionally wants manifest icons in 192 and 512 – the latter
+ * also as a “maskable” variant with more padding so Android/WebAPK does not
+ * crop it.
  *
- *   npm run icons        (Ergebnis liegt in assets/icons/)
+ *   npm run icons        (output lands in assets/icons/)
  */
 import { deflateSync } from "node:zlib";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -17,7 +18,7 @@ const OUT = join(import.meta.dirname, "..", "assets", "icons");
 const BG = [10, 11, 9];
 const LIME = [216, 255, 74];
 
-/* -------------------------------------------------------------- PNG-Writer */
+/* -------------------------------------------------------------- PNG writer */
 const CRC_TABLE = (() => {
   const table = new Int32Array(256);
   for (let n = 0; n < 256; n += 1) {
@@ -47,11 +48,11 @@ function encodePng(size, pixels) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(size, 0);
   ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8; // Bittiefe
+  ihdr[8] = 8; // bit depth
   ihdr[9] = 6; // RGBA
-  // 10-12: Kompression, Filter, Interlace – alle 0
+  // 10-12: compression, filter, interlace – all 0
 
-  // Jede Zeile bekommt ein Filter-Byte (0 = none).
+  // Every row gets one filter byte (0 = none).
   const raw = Buffer.alloc(size * (size * 4 + 1));
   for (let y = 0; y < size; y += 1) {
     const rowStart = y * (size * 4 + 1);
@@ -67,27 +68,28 @@ function encodePng(size, pixels) {
   ]);
 }
 
-/* ---------------------------------------------------------------- Zeichnen */
+/* ---------------------------------------------------------------- Drawing */
 const mix = (a, b, t) => a.map((value, index) => Math.round(value + (b[index] - value) * t));
 
 /**
- * Ein Pixel des Icons. `radius` ist die halbe Diagonale der Raute in Anteilen
- * der Bildkante, `ss` ist die Kantenlänge in CSS-Pixeln (nur für den Verlauf).
+ * One pixel of the icon. `radius` is half the diagonal of the diamond as a
+ * fraction of the image edge, `size` is the edge length in CSS pixels (only
+ * relevant for the gradient).
  */
 function sample(x, y, size, radius) {
   const u = (x + 0.5) / size;
   const v = (y + 0.5) / size;
 
-  // Hintergrund: dunkel mit einem weichen Limetten-Schein oben links.
+  // Background: dark with a soft lime glow in the upper left.
   const glow = Math.max(0, 1 - Math.hypot(u - 0.28, v - 0.2) / 0.62);
   let color = mix(BG, LIME, glow * glow * 0.16);
 
-  // Raute (Markenzeichen aus der Kopfzeile), leicht abgerundet gezeichnet.
+  // Diamond (the mark from the header), drawn slightly rounded.
   const dx = Math.abs(u - 0.5);
   const dy = Math.abs(v - 0.5);
   const diamond = (dx + dy) / radius;
   if (diamond <= 1) {
-    const edge = Math.min(1, (1 - diamond) * 14); // weiche Kante
+    const edge = Math.min(1, (1 - diamond) * 14); // soft edge
     color = mix(color, LIME, Math.min(1, edge));
   }
   return color;
@@ -115,7 +117,7 @@ function render(size, { radius, samples = 3 } = {}) {
       pixels[i] = Math.round(r / total);
       pixels[i + 1] = Math.round(g / total);
       pixels[i + 2] = Math.round(b / total);
-      pixels[i + 3] = 255; // deckend – iOS zeigt sonst schwarze Ränder
+      pixels[i + 3] = 255; // opaque – iOS would otherwise show black edges
     }
   }
   return encodePng(size, pixels);
@@ -127,7 +129,7 @@ const targets = [
   { file: "apple-touch-icon.png", size: 180, radius: 0.3 },
   { file: "icon-192.png", size: 192, radius: 0.3 },
   { file: "icon-512.png", size: 512, radius: 0.3 },
-  // Maskable: Motiv in der sicheren Zone (80 %), sonst schneidet Android es an.
+  // Maskable: motif inside the safe zone (80 %), otherwise Android crops it.
   { file: "maskable-512.png", size: 512, radius: 0.22 },
 ];
 

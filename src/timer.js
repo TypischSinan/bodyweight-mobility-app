@@ -1,10 +1,10 @@
 /**
- * Driftfreier Session-Timer.
+ * Drift-free session timer.
  *
- * Die Restzeit wird aus Zeitstempeln berechnet statt aus Tick-Zählungen. Läuft
- * der Tab im Hintergrund und wird `requestAnimationFrame` gedrosselt, holt der
- * nächste Frame die verstrichene Zeit korrekt nach – die Session bleibt also
- * exakt, auch wenn die Anzeige zwischenzeitlich nicht aktualisiert wurde.
+ * The remaining time is derived from timestamps instead of counting ticks. When the
+ * tab runs in the background and `requestAnimationFrame` gets throttled, the next
+ * frame picks up the elapsed time correctly – so the session stays exact even if
+ * the display was not updated in between.
  */
 export function createSessionTimer({
   sequence,
@@ -62,7 +62,7 @@ export function createSessionTimer({
       index += 1;
       remaining = durations[index] - carry;
       onTransition?.(index, sequence[index]);
-      // Pausen bekommen ein eigenes, weicheres Signal.
+      // Rests get their own, softer signal.
       if (remaining > 0) onBeep?.(sequence[index].rest ? "rest" : "next");
     }
 

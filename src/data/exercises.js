@@ -1,18 +1,18 @@
 /**
- * Übungskatalog.
+ * Exercise catalog.
  *
- * Quelle der Demo-Medien: luisaraujoc/free-exercise-db-api (MIT), Videos liegen
- * auf deren R2-CDN. Jede Übung hier wurde gegen den Datensatz geprüft:
- * `equipment === "body weight"` und die Ausführung braucht keinen Gegenstand –
- * keine Barren, keine Bank, keine Stufe, keine Bänder, keine Ringe.
- * `slug` ist der Dateiname im CDN (männliche Fassung), `only` markiert die
- * wenigen Clips, die es nur für ein Geschlecht gibt.
+ * Source of the demo media: luisaraujoc/free-exercise-db-api (MIT), the videos
+ * live on their R2 CDN. Every exercise here was checked against the dataset:
+ * `equipment === "body weight"` and the movement needs no object – no parallel
+ * bars, no bench, no step, no bands, no rings.
+ * `slug` is the file name on the CDN (male version), `only` marks the few clips
+ * that exist for one gender only.
  *
- * Felder: name (Anzeige), sub (Muskeln), focus (Filter), kind (Block-Art),
- * level, slug, only?, cue / mistake / breath (Coaching, deutsch).
+ * Fields: name (display), sub (muscles), focus (filter), kind (block type),
+ * level, slug, only?, cue / mistake / breath (coaching notes, German).
  */
 export const EXERCISES = {
-  // --- Kraft -------------------------------------------------------------
+  // --- Strength ----------------------------------------------------------
   squat: {
     name: "Squat",
     sub: "Quadrizeps & Gesäß",
@@ -46,8 +46,8 @@ export const EXERCISES = {
     mistake: "Ellbogen nach außen abspreizen",
     breath: "Ausatmen beim Hochdrücken",
   },
-  // Ersetzt „Old School Reverse Extensions": dessen Demo zeigt eine Bank mit
-  // Langhantel. Dieser Clip kommt ohne Hilfsmittel aus.
+  // Replaces “Old School Reverse Extensions”: its demo shows a bench with a
+  // barbell. This clip needs no equipment at all.
   "rotational-push-up": {
     name: "Rotational Push-up",
     sub: "Brust, Trizeps & Rumpf",
@@ -107,7 +107,7 @@ export const EXERCISES = {
     breath: "Ausatmen beim Aufspringen",
   },
 
-  // --- Rumpf -------------------------------------------------------------
+  // --- Core --------------------------------------------------------------
   "front-plank": {
     name: "Front Plank",
     sub: "Rumpf & Schultern",
@@ -198,8 +198,8 @@ export const EXERCISES = {
     mistake: "Beine schwingen mit",
     breath: "Ausatmen beim Hochkommen",
   },
-  // Ersetzt „45-Degree Bicycle Twisting Crunch": dessen Demo zeigt eine 45°-Bank
-  // mit Fußpolstern. Zwei gerätefreie Rumpfübungen übernehmen den Platz.
+  // Replaces “45-Degree Bicycle Twisting Crunch”: its demo shows a 45° bench
+  // with foot pads. Two equipment-free core exercises take its place.
   "pilates-corkscrew": {
     name: "Pilates-Korkenzieher",
     sub: "Gerader & schräger Bauch",
@@ -225,7 +225,7 @@ export const EXERCISES = {
     breath: "Gleichmäßig weiteratmen",
   },
 
-  // --- Mobilität (dynamisch) --------------------------------------------
+  // --- Mobility (dynamic) ------------------------------------------------
   "stretching-plyo-side-lunge-stretch": {
     name: "Seitlicher Ausfallschritt",
     sub: "Adduktoren & Hüfte",
@@ -238,7 +238,7 @@ export const EXERCISES = {
     breath: "Ausatmen beim seitlichen Aussteigen",
   },
 
-  // --- Dehnung -----------------------------------------------------------
+  // --- Stretching -------------------------------------------------------
   "stretching-above-head-chest-stretch": {
     name: "Brust-Stretch über Kopf",
     sub: "Brust & Schultern",
@@ -725,7 +725,7 @@ export const EXERCISES = {
   },
 };
 
-// Jede Übung kennt ihre eigene ID (wird u. a. für den Bildausschnitt gebraucht).
+// Every exercise knows its own id (needed for the framing among other things).
 for (const [id, exercise] of Object.entries(EXERCISES)) exercise.id = id;
 
 export const FOCUS_LABELS = {
@@ -748,7 +748,7 @@ export const KIND_LABELS = {
   dehnung: "Dehnung",
 };
 
-/** Demo-Medien liegen auf dem R2-CDN des Datensatz-Projekts. */
+/** Demo media live on the R2 CDN of the dataset project. */
 export const CDN = "https://pub-585d42eb1aa64a67aedf483ec328d3fe.r2.dev";
 
 export function videoUrl(exercise, gender) {
@@ -761,7 +761,7 @@ export function posterUrl(exercise, gender) {
   return `${CDN}/exercise-posters/${g}/${exercise.slug}.jpg`;
 }
 
-/** Geschlecht, das für diese Übung tatsächlich verfügbar ist. */
+/** Gender that is actually available for this exercise. */
 export function availableGender(exercise, gender) {
   return exercise.only || gender;
 }

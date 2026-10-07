@@ -1,30 +1,29 @@
 #!/usr/bin/env node
 /**
- * Bildausschnitt je Übung berechnen (einmalig, Ergebnis wird eingecheckt).
+ * Compute the framing per exercise (run once, the result is committed).
  *
- * Die Demo-Clips sind 16:9 und zeigen die Person mit viel leerem Hintergrund.
- * Dieses Skript bestimmt für **jeden Clip über alle Frames hinweg**, wo der
- * Inhalt liegt, und leitet daraus ab:
+ * The demo clips are 16:9 and show the person with a lot of empty background.
+ * This script determines, for **every clip across all of its frames**, where the
+ * content sits, and derives from that:
  *
- *   aspect  – wie hoch der Video-Rahmen sein darf (global), ohne seitlich
- *             jemals Inhalt abzuschneiden,
- *   objectX – horizontaler Ausschnitt der Szene,
- *   zoom,x,y – Skalierung und Drehpunkt im Rahmen.
+ *   aspect  – how tall the video panel may be (global) without ever cutting off
+ *             content at the sides,
+ *   objectX – horizontal crop of the scene,
+ *   zoom,x,y – scale and pivot inside the panel.
  *
- * Ergebnis: `src/data/framing.js`, geladen von der App. Alles zusammen sorgt
- * dafür, dass die Person möglichst groß erscheint und trotzdem in keinem Frame
- * angeschnitten wird.
+ * Result: `src/data/framing.js`, loaded by the app. Together this makes the
+ * person appear as large as possible while never being cropped in any frame.
  *
- * Am Ende läuft eine Gegenprüfung: jeder Frame wird mit einer *feinfühligeren*
- * Schranke erneut vermessen und durch die berechnete Rahmung geschickt. Bleibt
- * dabei Inhalt am Rand hängen, bricht das Skript ab.
+ * A counter-check runs at the end: every frame is measured again with a *more
+ * sensitive* threshold and pushed through the computed framing. If content still
+ * touches an edge, the script aborts.
  *
- *   npm run framing                                 alle Übungen neu rechnen
- *   npm run framing -- --only=squat,push-ups        nur einzelne Übungen
+ *   npm run framing                                 recompute all exercises
+ *   npm run framing -- --only=squat,push-ups        only single exercises
  *
- * Mit `--only` bleibt der globale Rahmen bestehen und die übrigen Einträge
- * werden unverändert übernommen – praktisch, wenn eine Übung dazukommt.
- * Braucht ffmpeg im PATH und die Dev-Abhängigkeit jpeg-js.
+ * With `--only` the global aspect stays as it is and the remaining entries are
+ * kept unchanged – handy when an exercise is added.
+ * Needs ffmpeg on the PATH and the dev dependency jpeg-js.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -44,19 +43,19 @@ try {
 }
 
 const CDN = "https://pub-585d42eb1aa64a67aedf483ec328d3fe.r2.dev";
-const FRAME_FPS = 6; // Frames pro Sekunde für die Ausdehnungsmessung
+const FRAME_FPS = 6; // frames per second for the extent measurement
 const FRAME_WIDTH = 480;
-const PAD = 0.02; // Rand um den gemessenen Inhalt (in Frame-Anteilen)
-const SAFETY = 0.9; // Sicherheitsabschlag auf den rechnerisch möglichen Zoom
+const PAD = 0.02; // margin around the measured content (in frame fractions)
+const SAFETY = 0.9; // safety discount on the theoretically possible zoom
 const MAX_ZOOM = 1.6;
-// Der Hintergrund ist ein Verlauf, deshalb wird er pro Zeile aus den äußeren
-// Spalten geschätzt. Gemessen wird mit 40, gegengeprüft feinfühliger mit 16.
+// The background is a gradient, so it is estimated per row from the outer
+// columns. Measuring uses 40, the counter-check uses the more sensitive 16.
 const MEASURE_THRESHOLD = 40;
 const VERIFY_THRESHOLD = 16;
-const VERIFY_TOLERANCE = 0.02; // erlaubte Überschreitung des Rahmens in der Prüfung
+const VERIFY_TOLERANCE = 0.02; // allowed overshoot of the panel in the check
 const WORK = join(tmpdir(), "pulse-framing");
 
-// Nur einzelne Übungen neu rechnen, z. B. nach einem Tausch im Katalog.
+// Recompute only single exercises, e.g. after a swap in the catalog.
 const onlyArg = process.argv.find((arg) => arg.startsWith("--only"))?.split("=")[1];
 const only = onlyArg
   ? onlyArg.split(",").map((value) => value.trim()).filter(Boolean)
@@ -76,9 +75,9 @@ function hasFfmpeg() {
 const median = (values) => values.slice().sort((a, b) => a - b)[Math.floor(values.length / 2)];
 
 /**
- * Inhalt eines Frames: Bounding-Box der Pixel, die vom Hintergrund abweichen.
- * Der Hintergrund ist ein vertikaler Verlauf und wird pro Zeile aus den äußeren
- * 6 % der Spalten geschätzt – dort steht praktisch nie eine Person.
+ * Content of a frame: bounding box of the pixels that differ from the background.
+ * The background is a vertical gradient and is estimated per row from the outer
+ * 6 % of the columns – a person practically never stands there.
  */
 function frameBox(file, threshold) {
   const { width, height, data } = jpeg.decode(readFileSync(file), { useTArray: true });
@@ -136,7 +135,7 @@ const union = (a, b) =>
         y1: Math.max(a.y1, b.y1),
       };
 
-/** Video laden und Frames extrahieren; Box = Vereinigung über alle Frames. */
+/** Download the video and extract frames; box = union across all frames. */
 async function measureClip(id, exercise) {
   const gender = exercise.only ?? "male";
   const videoFile = join(WORK, `${id}.mp4`);
@@ -173,7 +172,7 @@ async function measureClip(id, exercise) {
   return { frames, box: padBox(box) };
 }
 
-/** Nur als Rückfallebene, wenn ffmpeg fehlt: ein Standbild pro Übung. */
+/** Fallback only, when ffmpeg is missing: one still per exercise. */
 async function measurePoster(id, exercise) {
   const gender = exercise.only ?? "male";
   const response = await fetch(`${CDN}/exercise-posters/${gender}/${exercise.slug}.jpg`);
@@ -186,7 +185,7 @@ async function measurePoster(id, exercise) {
   return { frames: [], box: padBox(box) };
 }
 
-/** Inhalt im Panel-Raum: x auf das sichtbare Fenster bezogen, y unverändert. */
+/** Content in panel space: x relative to the visible window, y unchanged. */
 const toPanelSpace = (box, visibleWidth, windowLeft) => ({
   x0: (box.x0 - windowLeft) / visibleWidth,
   x1: (box.x1 - windowLeft) / visibleWidth,
@@ -209,7 +208,7 @@ function solveFraming(box) {
   return { zoom: Number(zoom.toFixed(3)), x: axis(box.x0, box.x1), y: axis(box.y0, box.y1) };
 }
 
-/** Wie in der App: Skalierung um (x, y) und Auschnitt über object-position. */
+/** Same as in the app: scale around (x, y) and crop via object-position. */
 const mapToPanel = (value, origin, zoom) => origin + (value - origin) * zoom;
 
 const useFfmpeg = hasFfmpeg();
@@ -244,10 +243,10 @@ if (problems.length) {
   process.exit(1);
 }
 
-// Passendster (höchster) globaler Rahmen: jeder Clip muss hineinpassen.
+// Best-fitting (tallest) global panel: every clip has to fit inside.
 const FRAME_ASPECT = 16 / 9;
-// Bei --only bleibt der Rahmen des Bestands erhalten, damit sich alle anderen
-// Übungen nicht mitverschieben.
+// With --only the existing panel is kept so that all other exercises do not
+// shift along with it.
 const aspect = only
   ? Number(EXISTING_ASPECT)
   : Number(
@@ -261,8 +260,8 @@ const aspect = only
     );
 const visibleWidth = Math.min(1, aspect / FRAME_ASPECT);
 
-// Bestand übernehmen, aber Einträge entfernen, die es im Katalog nicht mehr gibt
-// (getauschte Übungen würden sonst als Karteileichen stehen bleiben).
+// Take over the existing entries, but drop those that are no longer in the
+// catalog (swapped exercises would otherwise linger as dead entries).
 const framing = only
   ? Object.fromEntries(Object.entries(EXISTING_FRAMING).filter(([id]) => EXERCISES[id]))
   : {};
@@ -270,7 +269,7 @@ const report = [];
 
 for (const id of ids) {
   const { box } = measured[id];
-  // Fenster so legen, dass der Inhalt dieses Clips mittig darin sitzt.
+  // Place the window so that this clip's content sits centered inside it.
   const slack = visibleWidth - (box.x1 - box.x0);
   const windowLeft = Math.max(0, Math.min(1 - visibleWidth, box.x0 - slack / 2));
   const panelBox = toPanelSpace(box, visibleWidth, windowLeft);
@@ -287,7 +286,7 @@ for (const id of ids) {
   );
 }
 
-/* Gegenprüfung: jeden Frame feinfühlig vermessen und durch die Rahmung schicken. */
+/* Counter-check: measure every frame with a more sensitive threshold and push it through the framing. */
 const violations = [];
 let checkedFrames = 0;
 
@@ -334,23 +333,23 @@ if (violations.length) {
 }
 
 const header = `/**
- * Bildausschnitt je Übung – automatisch erzeugt von \`scripts/framing.mjs\`.
+ * Per-exercise framing – generated automatically by \`scripts/framing.mjs\`.
  *
- * Grundlage: Messung des sichtbaren Inhalts über ${useFfmpeg ? "alle Frames der Clips (6 fps, ffmpeg)" : "je ein Standbild"}, je Frame gegengeprüft.
+ * Basis: measurement of the visible content across ${useFfmpeg ? "all frames of the clips (6 fps, ffmpeg)" : "one still per clip"}, every frame re-checked.
  *
- *   aspect  = Höhe/Breite des Video-Rahmens (${aspect}:1); höher als 16:9, damit die
- *             Person größer erscheint, aber ohne je Inhalt seitlich zu verlieren.
- *   zoom    = Skalierung im Rahmen (nur leerer Hintergrund wird beschnitten).
- *   x/y     = Drehpunkt in Prozent (transform-origin).
- *   objectX = horizontaler Szenenausschnitt in Prozent (object-position).
+ *   aspect  = height/width of the video panel (${aspect}:1); taller than 16:9 so the
+ *             person appears bigger without ever losing content at the sides.
+ *   zoom    = scale inside the panel (only empty background is cropped).
+ *   x/y     = pivot in percent (transform-origin).
+ *   objectX = horizontal crop of the scene in percent (object-position).
  *
- * Rand ${(PAD * 100).toFixed(1)} %, Sicherheitsabschlag ${((1 - SAFETY) * 100).toFixed(0)} %, Obergrenze ${MAX_ZOOM}x.
- * Neu berechnen: \`npm run framing\` (einzelne Übungen: \`--only=<id,...>\`).
- *${only ? `\n * Zuletzt neu gerechnet: ${ids.join(", ")}.` : ""}
+ * Padding ${(PAD * 100).toFixed(1)} %, safety margin ${((1 - SAFETY) * 100).toFixed(0)} %, upper bound ${MAX_ZOOM}x.
+ * Recompute: \`npm run framing\` (single exercises: \`--only=<id,...>\`).
+ *${only ? `\n * Last recomputed: ${ids.join(", ")}.` : ""}
  */
 export const FRAMING = ${JSON.stringify(framing, null, 2)};
 
-/** Globaler Rahmen für alle Übungen. */
+/** Global panel aspect for all exercises. */
 export const PANEL_ASPECT = "${aspect}";
 `;
 

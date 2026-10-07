@@ -1,7 +1,7 @@
 /**
- * Akustische Hinweise ohne Audiodateien: kurze WebAudio-Signale für Countdown,
- * Übungswechsel und Sessionende. Alle Aufrufe sind No-Ops, wenn der Browser
- * keinen AudioContext anbietet oder der Ton ausgeschaltet ist.
+ * Audible cues without audio files: short WebAudio signals for the countdown,
+ * exercise changes and the end of a session. Every call is a no-op when the
+ * browser offers no AudioContext or the sound is switched off.
  */
 export function createCues() {
   let context = null;
@@ -32,7 +32,7 @@ export function createCues() {
       oscillator.start(start);
       oscillator.stop(start + duration + 0.02);
     } catch {
-      /* Audio ist Zugabe, niemals kritisch */
+      /* audio is a bonus, never critical */
     }
   }
 
@@ -42,7 +42,7 @@ export function createCues() {
       if (enabled) ensureContext();
     },
     isEnabled: () => enabled,
-    /** Muss aus einer Nutzer-Geste heraus aufgerufen werden (Autoplay-Policy). */
+    /** Has to be called from within a user gesture (autoplay policy). */
     unlock() {
       const ctx = ensureContext();
       if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
@@ -51,7 +51,7 @@ export function createCues() {
       if (!enabled) return;
       if (kind === "count") blip({ frequency: 660, duration: 0.09, gain: 0.035 });
       if (kind === "next") blip({ frequency: 880, duration: 0.16, gain: 0.05, type: "triangle" });
-      // Pause: tiefer und länger, damit sie sich vom Übungswechsel unterscheidet.
+      // Rest: lower and longer so it differs from an exercise change.
       if (kind === "rest") {
         blip({ frequency: 520, duration: 0.18, gain: 0.04, type: "sine" });
         blip({ frequency: 390, duration: 0.22, gain: 0.035, type: "sine", delay: 0.2 });

@@ -1,18 +1,18 @@
 /**
- * Bildausschnitt je Übung – automatisch erzeugt von `scripts/framing.mjs`.
+ * Per-exercise framing – generated automatically by `scripts/framing.mjs`.
  *
- * Grundlage: Messung des sichtbaren Inhalts über alle Frames der Clips (6 fps, ffmpeg), je Frame gegengeprüft.
+ * Basis: measurement of the visible content across all frames of the clips (6 fps, ffmpeg), every frame re-checked.
  *
- *   aspect  = Höhe/Breite des Video-Rahmens (1.567:1); höher als 16:9, damit die
- *             Person größer erscheint, aber ohne je Inhalt seitlich zu verlieren.
- *   zoom    = Skalierung im Rahmen (nur leerer Hintergrund wird beschnitten).
- *   x/y     = Drehpunkt in Prozent (transform-origin).
- *   objectX = horizontaler Szenenausschnitt in Prozent (object-position).
+ *   aspect  = height/width of the video panel (1.567:1); taller than 16:9 so the
+ *             person appears bigger without ever losing content at the sides.
+ *   zoom    = scale inside the panel (only empty background is cropped).
+ *   x/y     = pivot in percent (transform-origin).
+ *   objectX = horizontal crop of the scene in percent (object-position).
  *
- * Rand 2.0 %, Sicherheitsabschlag 10 %, Obergrenze 1.6x.
- * Neu berechnen: `npm run framing` (einzelne Übungen: `--only=<id,...>`).
+ * Padding 2.0 %, safety margin 10 %, upper bound 1.6x.
+ * Recompute: `npm run framing` (single exercises: `--only=<id,...>`).
  *
- * Zuletzt neu gerechnet: rotational-push-up, lying-scissor-kick, pilates-corkscrew.
+ * Last recomputed: rotational-push-up, lying-scissor-kick, pilates-corkscrew.
  */
 export const FRAMING = {
   "squat": {
@@ -395,5 +395,5 @@ export const FRAMING = {
   }
 };
 
-/** Globaler Rahmen für alle Übungen. */
+/** Global panel aspect for all exercises. */
 export const PANEL_ASPECT = "1.567";

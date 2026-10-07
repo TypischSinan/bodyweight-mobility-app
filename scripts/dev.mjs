@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
- * Dev-Server ohne Abhängigkeiten.
+ * Dependency-free dev server.
  *
- * Die App besteht aus statischen Dateien plus ES-Modulen – dafür braucht es
- * keinen Bundler, nur einen Server, der die richtigen Content-Types schickt
- * (`file://` funktioniert wegen der Modul-Imports nicht).
+ * The app is static files plus ES modules – that needs no bundler, only a
+ * server that sends the right content types (`file://` does not work because
+ * of the module imports).
  *
  *   npm run dev            → http://127.0.0.1:5173
- *   PORT=4000 npm run dev  → anderer Port
+ *   PORT=4000 npm run dev  → different port
  */
 import { createServer } from "node:http";
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { extname, join, normalize, resolve, sep } from "node:path";
 
 const root = resolve(import.meta.dirname, "..");
-// PORT kann als leerer String gesetzt sein – Number("") wäre 0 (Zufallsport).
+// PORT can be set to an empty string – Number("") would be 0 (random port).
 const port = Number.parseInt(process.env.PORT ?? "", 10) || 5173;
 const host = process.env.HOST?.trim() || "127.0.0.1";
 

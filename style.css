@@ -1,7 +1,7 @@
 /* ==========================================================================
-   Pulse — Design-System
-   Richtung: dunkles „Instrumentenpanel", ein einziger Säure-Akzent, Mono-Ziffern.
-   Leitregel: so wenig Text wie möglich sichtbar, Details erst auf Wunsch.
+   Pulse — design system
+   Direction: dark "instrument panel", a single acid accent, mono digits.
+   Guiding rule: as little visible text as possible, details only on request.
    ========================================================================== */
 
 :root {
@@ -28,7 +28,7 @@
   box-sizing: border-box;
 }
 
-/* Eigene display-Regeln (.modal, .player) dürfen `hidden` nicht aushebeln. */
+/* Custom display rules (.modal, .player) must not override `hidden`. */
 [hidden] {
   display: none !important;
 }
@@ -44,7 +44,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
   overflow-x: hidden;
-  /* Kein Gummiband-Effekt und kein Zurückspringen am Seitenrand (iPhone). */
+  /* No rubber-band effect and no bounce at the page edge (iPhone). */
   overscroll-behavior: none;
 }
 
@@ -77,8 +77,9 @@ body::before {
 }
 
 /* ---------------------------------------------------------------- Layout */
-/* Alle Maße berücksichtigen die Geräte-Ränder: Dynamic Island oben, Home-Indikator
-   unten (env(safe-area-inset-*)). Auf dem iPhone 16 Pro Max sind das 59 px und 34 px. */
+/* Every measurement respects the device edges: Dynamic Island on top, home
+   indicator at the bottom (env(safe-area-inset-*)). On the iPhone 16 Pro Max
+   that is 59 px and 34 px. */
 .app-shell {
   position: relative;
   z-index: 2;
@@ -118,6 +119,41 @@ body::before {
   font-size: 11px;
 }
 
+/* Language switch: DE / EN, same shape as the filter pills, one step smaller */
+.lang-switch {
+  display: inline-flex;
+  gap: 2px;
+  align-self: center;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+}
+
+.lang-switch button {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.lang-switch button:hover {
+  color: var(--ink);
+}
+
+.lang-switch button[aria-pressed="true"] {
+  color: #0b0c07;
+  background: var(--lime);
+  font-weight: 600;
+}
+
 .topbar-meta,
 .eyebrow,
 .section-count,
@@ -145,7 +181,7 @@ body::before {
   color: var(--muted);
 }
 
-/* ------------------------------------------------------------- Typografie */
+/* ------------------------------------------------------------- Typography */
 .eyebrow {
   margin: 0 0 6px;
   font-size: 10px;
@@ -281,7 +317,7 @@ h2 {
   color: var(--muted);
 }
 
-/* ---------------------------------------------------------- Bundle-Karten */
+/* ------------------------------------------------------------ Bundle cards */
 .bundle-list {
   display: grid;
   gap: 8px;
@@ -404,7 +440,7 @@ h2 {
   border-color: var(--line-strong);
 }
 
-/* Titel und Zurück-Knopf in einer Zeile – spart die frühere eigene Knopfreihe. */
+/* Title and back button in one row – saves the separate button row used before. */
 .title-row {
   display: flex;
   align-items: center;
@@ -426,7 +462,7 @@ h2 {
   color: var(--muted);
   font-size: 13.5px;
   line-height: 1.35;
-  /* Nur zwei Zeilen – der Rest interessiert beim Starten nicht. */
+  /* Two lines only – the rest does not matter when starting. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -444,8 +480,8 @@ h2 {
   display: grid;
   gap: 4px;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  /* start, nicht stretch: die Blöcke behalten ihre Inhaltshöhe statt sich über
-     den freien Platz zu ziehen. */
+  /* start, not stretch: the blocks keep their content height instead of being
+     pulled across the free space. */
   align-content: start;
   margin-bottom: 14px;
 }
@@ -502,7 +538,7 @@ h2 {
   white-space: nowrap;
 }
 
-/* „+20" = die Pause nach dieser Übung. */
+/* "+20" = the rest after this exercise. */
 .plan-time i {
   font-style: normal;
   margin-left: 3px;
@@ -613,9 +649,9 @@ h2 {
   letter-spacing: 0.08em;
 }
 
-/* Demo-Video: Der Rahmen ist etwas höher als 16:9 und wird je Übung so
-   verschoben/gezoomt, dass nur leerer Hintergrund verschwindet – die Person
-   bleibt in jedem Frame vollständig sichtbar (siehe scripts/framing.mjs). */
+/* Demo video: the frame is slightly taller than 16:9 and is shifted/zoomed per
+   exercise so that only empty background disappears – the person stays fully
+   visible in every frame (see scripts/framing.mjs). */
 .media {
   position: relative;
   margin: 0 0 12px;
@@ -997,7 +1033,7 @@ h2 {
   color: var(--muted);
 }
 
-/* Speichern und Laden des Fortschritts: bewusst leise, drei Textknöpfe. */
+/* Saving and loading progress: deliberately quiet, three text buttons. */
 .data-row {
   display: flex;
   flex-wrap: wrap;
@@ -1051,7 +1087,7 @@ h2 {
   font-weight: 600;
 }
 
-/* In der installierten App ist der Hinweis sinnlos. */
+/* In the installed app the hint is pointless. */
 @media (display-mode: standalone) {
   .install-hint {
     display: none !important;
@@ -1214,12 +1250,11 @@ h2 {
   }
 }
 
-/* --------------------------------------- iPhone: Training ohne Scrollen
-   Auf dem iPhone 16 Pro Max (440 × 956 CSS-Pixel) sollen Ablauf und Player
-   vollständig auf den Schirm passen: keine Kopfzeile, keine doppelten Abstände
-   und kein Seiten-Scrollen. Nur der Ablauf darf intern scrollen, falls eine
-   Session doch zu lang ist. Zurück geht es über die Leiste unten oder Wischen
-   nach rechts. */
+/* --------------------------------------- iPhone: training without scrolling
+   On the iPhone 16 Pro Max (440 × 956 CSS pixels) plan and player are meant to
+   fit on screen completely: no top bar, no duplicated gaps and no page
+   scrolling. Only the plan may scroll internally if a session is really too
+   long. Going back works through the bottom bar or by swiping right. */
 @media (max-width: 879px) {
   body.fit {
     height: 100dvh;
@@ -1233,7 +1268,7 @@ h2 {
     padding-bottom: calc(var(--nav-height) + 2px + env(safe-area-inset-bottom));
   }
 
-  /* Kopfzeile bleibt sichtbar, aber schlank (ohne die Meta-Zeile). */
+  /* The top bar stays visible but slim (without the meta line). */
   body.fit .topbar {
     padding-bottom: 8px;
     margin-bottom: 6px;
@@ -1253,7 +1288,7 @@ h2 {
     gap: 8px;
   }
 
-  /* Abstände kommen hier aus dem gap – sonst doppelt. */
+  /* Gaps come from the gap here – otherwise they would be doubled. */
   body.fit .view > * {
     margin-top: 0;
     margin-bottom: 0;
@@ -1264,8 +1299,8 @@ h2 {
     margin-top: 6px;
   }
 
-  /* Der Ablauf wächst nicht mit, damit zwischen Liste und Startknopf keine
-     große Lücke entsteht; wird es eng, scrollt er als Einziges für sich. */
+  /* The plan does not grow along, so no big hole appears between the list and
+     the start button; when space gets tight it is the only part that scrolls. */
   body.fit .detail .plan {
     flex: 0 1 auto;
     min-height: 0;
@@ -1278,11 +1313,11 @@ h2 {
     overscroll-behavior: contain;
   }
 
-  /* Der Video-Rahmen nimmt überschüssigen Platz als Rand auf, statt zu wachsen:
-     nur so bleibt das Format (und damit der gemessene Bildausschnitt) erhalten
-     und die Person wird nie angeschnitten.
-     Dazu randlos bis an die Displaykanten – auf dem iPhone ist das der größte
-     mögliche Rahmen (440 statt 408 Punkt Breite). */
+  /* The video frame absorbs surplus space as a margin instead of growing: that
+     is the only way the aspect ratio (and with it the measured crop) is kept
+     and the person is never cut off.
+     On top of that it runs edge to edge to the display borders – on the iPhone
+     that is the largest possible frame (440 instead of 408 point width). */
   body.fit .player .media {
     margin-block: auto;
     margin-inline: -16px;
@@ -1303,7 +1338,7 @@ h2 {
   }
 }
 
-/* --------------------------------------------------- Desktop-Komposition */
+/* --------------------------------------------------- Desktop composition */
 @media (min-width: 880px) {
   .app-shell {
     padding: 26px 24px calc(var(--nav-height) + 40px);

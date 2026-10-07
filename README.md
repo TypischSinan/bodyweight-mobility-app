@@ -1,187 +1,91 @@
-# Pulse — 10 Minuten Training
+# Pulse — 10-minute bodyweight & mobility training
 
-16 gerätefreie Sessions à exakt zehn Minuten. Jede Session besteht aus **10
-Übungen** im festen Rhythmus: 60 s Primer, danach je 40 s Arbeit mit 20 s Pause
-dazwischen. Innerhalb einer Session kommt jede Übung nur einmal vor; der Aufbau
-folgt Blöcken (Primer → Arbeit → Rumpf → Cool-down bzw. Flow → Halten), und zu
-jeder Bewegung gibt es ein Demo-Video mit Formhinweisen.
+**16 equipment-free sessions that always fit into ten minutes.** Pick one, press
+play, follow the demo video. No account, no ads, no tracking, no build step —
+plain HTML, CSS and ES modules.
 
-## Schnellstart
+[![License: MIT](https://img.shields.io/badge/license-MIT-D8FF4A?labelColor=0A0B09)](LICENSE)
+[![Dependencies: none](https://img.shields.io/badge/dependencies-none-D8FF4A?labelColor=0A0B09)](package.json)
+[![Languages: DE / EN](https://img.shields.io/badge/languages-DE%20%2F%20EN-D8FF4A?labelColor=0A0B09)](src/i18n.js)
 
-```bash
-npm run dev          # http://127.0.0.1:5173
-PORT=4000 npm run dev
-```
+| Sessions | Set-up | Install |
+| --- | --- | --- |
+| ![Session list](docs/screenshots/library.png) | ![Session plan](docs/screenshots/plan.png) | ![Running session](docs/screenshots/player.png) |
+| 16 sessions, filtered by category and focus | Every session as a block-by-block plan with times | Big timer, demo clip, one coaching cue, details on request |
 
-Es gibt **keine Abhängigkeiten und keinen Build-Schritt** – nur Node ≥ 20 für den
-Dev-Server. Ein `npm install` ist nicht nötig.
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" alt="Training log with streak, 7-day chart and recent sessions" width="300" />
+</p>
 
-```bash
-npm run validate        # Daten prüfen: 600 s pro Session, 10 Übungen, 40/20-Rhythmus,
-                        # keine Doppelungen, nur gerätefreie Übungen, PWA-Dateien
-npm run validate:media  # zusätzlich: jede Video- und Poster-URL am CDN antwortet mit 200
-npm run framing         # Bildausschnitte neu berechnen (braucht ffmpeg + einmalig `npm install`)
-npm run framing -- --only=<slug,...>   # nur einzelne Übungen neu vermessen
-npm run icons           # App-Icons in assets/icons erzeugen (ohne Abhängigkeit)
-```
+## What it is
 
-Nur `npm run framing` braucht eine Abhängigkeit (`jpeg-js`, Dev-only). Die App
-selbst, der Dev-Server und `npm run icons` laufen ohne `node_modules`.
+A small training app for the days when you have exactly ten minutes and no
+equipment: **no dumbbells, no bench, no pull-up bar, no bands, no step** — every
+movement was checked against its demo clip to be doable on the floor, and it
+includes a full mobility and stretching line-up next to the strength work. The
+app is built for a phone you already own: open it, add it to your home screen,
+and it starts like a native app and works offline.
 
-## Aufbau
+Three things make it more than a video playlist:
 
-```
-index.html                    Markup aller Ansichten (Library, Detail, Player, Dashboard)
-style.css                     Design-System (dunkles „Instrumentenpanel", Säure-Lime, Mono-Ziffern)
-manifest.webmanifest          Name, Farben und Icons für die Installation
-sw.js                         Service Worker: App-Hülle für den Offline-Start
-favicon.svg                   Vektor-Favicon (dieselbe Raute wie die Kopfzeile)
-src/app.js                    Zustand, Ansichten, Player-Steuerung, Filter, Dashboard
-src/timer.js                  driftfreier Session-Timer (rechnet mit Zeitstempeln, nicht mit Ticks)
-src/audio.js                  Countdown-/Wechsel-/Pausensignale über WebAudio (keine Audiodateien)
-src/storage.js                Trainingshistorie + Einstellungen (localStorage), Auswertung, Sicherung
-src/data/exercises.js         Übungskatalog: Medien-Slug, Fokus, Coaching-Texte (deutsch)
-src/data/bundles.js           16 Sessions: Blöcke aus Übungs-IDs, Rhythmus-Konstanten
-src/data/framing.js           Bildausschnitt je Übung (erzeugt von scripts/framing.mjs)
-assets/icons/                 App-Icons (erzeugt von scripts/icons.mjs)
-scripts/dev.mjs               Static-Server ohne Abhängigkeiten
-scripts/validate.mjs          Prüfskript für Daten, Bildausschnitte, Installation und Medien
-scripts/framing.mjs           Analyse der Clips: Rahmen, Zoom, Drehpunkt je Übung
-scripts/icons.mjs             PNG-Erzeugung der App-Icons (nur Node-Standardbibliothek)
-data/exercise-db-snapshot.json Momentaufnahme des Quelldatensatzes (nur Prüffelder)
-```
+- **A fixed rhythm.** Every session is exactly 10:00 — 60 s primer, then 9×40 s
+  of work with 20 s of rest in between. The timing is not stored per session, it
+  follows from one rule, so no session can drift.
+- **Good form, not just movement.** Each exercise carries one cue, the typical
+  mistake and a breathing hint, kept deliberately short so you can read it while
+  you move.
+- **A log that stays.** Streak, last seven days and totals live in the browser —
+  optionally exported to a JSON file and restored on another device.
 
-## Installation auf dem Handy
+## Live app
 
-Pulse ist eine installierbare Web-App – kein Store, kein Build:
+**https://typischsinan.github.io/bodyweight-mobility-app/** — runs in any modern
+browser, no installation required.
 
-1. Seite im Browser öffnen (Chrome/Safari, **https** oder `localhost`).
-2. Teilen-Menü → **„Zum Home-Bildschirm"** (Android: „App installieren").
-3. Die Verknüpfung startet die App ohne Adressleiste (`display: standalone`).
+On an iPhone, open the link in Safari → **Share → Add to Home Screen**. The
+shortcut then starts without the browser bar, keeps your progress for good (iOS
+clears script storage of non-installed sites after seven days) and works without
+a network: a service worker keeps the app shell, only the demo clips come from
+the CDN — offline, the player shows the still image instead.
 
-Damit startet die App auch **ohne Netz**: `sw.js` legt die App-Hülle (HTML, CSS,
-Module, Icons) in den Cache. Der Service Worker lädt eigene Dateien zuerst aus
-dem Netz – so greift ein Update sofort und HTML und Module können nicht
-auseinanderlaufen – und fällt nur bei fehlender Verbindung auf den Cache zurück.
-Nur die Demo-Clips kommen zwingend vom CDN; ohne Netz zeigt der Player das
-Standbild.
+## Features
 
-## Wo der Fortschritt liegt (Datenspeicherung)
+- **Library** with a category switch (Strength · HIIT · Mobility · Stretch) and a
+  focus filter (full body, core, upper body, legs, hips, back, shoulders, neck &
+  hands, calves & feet), plus intensity and duration per session.
+- **Session plan**: every session broken into its blocks (primer → work → core →
+  cool-down / flow → holds) with duration per block and `+20` marking the rest
+  after each exercise.
+- **Player**: 3-2-1 lead-in, drift-free countdown, progress for the current
+  exercise *and* the whole session, 20-second rests that already show the next
+  exercise as a still image with its own signal, one cue line with a `Details`
+  panel (muscles, common mistake, breathing), next exercise, sound toggle and a
+  male/female demo switch.
+- **Training log**: streak, seven-day chart in minutes, totals and the recent
+  sessions, plus backup, restore and reset.
+- **Keyboard**: space = start/pause, ← → = previous/next exercise, `R` = restart,
+  `Esc` = back. Swiping right goes back as well.
+- **Two languages**: full German and English interface, switchable at any time —
+  including while a session is running.
+- **Careful with the details**: wake lock keeps the screen awake during a
+  session, a broken video falls back to the still image with a note, and
+  `prefers-reduced-motion` disables the animations.
 
-Der Trainingsverlauf und die Einstellungen (Ton, Demo-Aufnahme Mann/Frau, letzte
-Session) liegen im **`localStorage` der Seite** – kein Konto, kein Server, keine
-Cookies. Wichtig ist die Herkunft: gespeichert wird pro **Origin** (Schema + Host
-+ Port). Zwei Dateien desselben Hosts teilen sich den Speicher, ein anderer Host
-oder ein privates Fenster haben ihren eigenen.
+## How a session is built
 
-Auf iOS ist das der Grund, die App zu installieren: Safari räumt Skript-Speicher
-von nicht installierten Seiten nach sieben Tagen ohne Interaktion auf. Eine über
-„Zum Home-Bildschirm" installierte Web-App ist davon ausgenommen – der Fortschritt
-bleibt also erhalten, solange die Verknüpfung existiert.
-
-Zusätzlich lässt sich der Verlauf als Datei sichern (Dashboard → **„Fortschritt
-sichern"** / **„Sicherung laden"**, JSON, umgesetzt in `createBackup()` /
-`restoreBackup()` in `src/storage.js`). Beim Einlesen wird zusammengeführt statt
-ersetzt: bereits vorhandene Sessions werden nicht doppelt gezählt. Das ist der
-Weg für Gerätewechsel, eine neu aufgesetzte Verknüpfung oder wenn die
-Websitedaten gelöscht wurden.
-
-## iPhone 16 Pro Max
-
-Die Trainingsansichten sind auf das Display des iPhone 16 Pro Max (440 × 956
-CSS-Pixel) gerechnet:
-
-- **Keine Seitenscrollung**: Ablauf und Player füllen genau die Höhe des sichtbaren
-  Bereichs (`body.fit` in `style.css`). Nur der Ablauf scrollt zur Not intern,
-  wenn ein Gerät noch weniger Höhe übrig lässt.
-- **Geräte-Ränder**: Abstände berücksichtigen `env(safe-area-inset-*)` für Dynamic
-  Island (59 px) und Home-Indikator (34 px); die Navigationsleiste sitzt darüber.
-- **Größtmögliches Demo-Fenster**: Der Player zeigt das Video randlos über die
-  volle Displaybreite (440 statt 408 px) und behält dabei das gemessene Format
-  von 1,567:1 aus `src/data/framing.js` – dadurch wächst die Person, ohne dass
-  Inhalt angeschnitten wird.
-- **Kein Gummiband-Effekt** (`overscroll-behavior: none`) und keine
-  Doppeltipp-Vergrößerung auf Bedienelementen.
-
-## Gestaltungsprinzip: wenig Text, Details auf Anfrage
-
-Die Oberfläche zeigt pro Bildschirm nur das Nötigste:
-
-- **Library**: Kopfzeile, Kategorie-Segment, Fokus-Auswahl, dann pro Session nur
-  Nummer, Titel und eine Metazeile. Die Beschreibung gibt es erst im Detail.
-- **Ablauf (Trainings-Tab)**: Kategorie und Level, Titel mit dem Zurück-Knopf
-  **neben** dem Titel (eine Zeile), eine Metazeile, ein Satz Beschreibung und der
-  Ablauf als kompakte Zeilen – je Übung Name, Dauer und `+20` für die folgende
-  Pause. Der Session-Start bleibt unten in Reichweite.
-- **Player**: Timer, Video, **eine** Ausführungszeile und ein `Details`-Knopf für
-  Muskeln, typischen Fehler und Atmung. In der Pause steht dort schon die nächste
-  Übung samt Standbild.
-- **Kopfzeile**: nur die Wortmarke, kein erklärender Zusatz.
-
-## Bildausschnitt der Videos
-
-Die Clips sind 16:9 mit viel leerem Hintergrund. `scripts/framing.mjs` vermisst
-jeden Clip über **alle Frames** (ffmpeg, 6 fps) und berechnet daraus den globalen
-Rahmen (1,567:1, höher als 16:9), den Szenenausschnitt und den Zoom je Übung – so
-wird die Person größer dargestellt, ohne dass in irgendeinem Frame etwas
-abgeschnitten wird. Anschließend prüft das Skript jeden Frame noch einmal mit
-einer feinfühligeren Schwelle nach und bricht ab, wenn Inhalt den Rand berührt.
-Mit `--only=<slug,...>` werden nur einzelne Übungen neu vermessen und die übrigen
-Einträge unverändert übernommen.
-
-## Funktionen
-
-- **Library** mit Kategorie-Segment und Fokus-Auswahl, Intensitäts- und Umfangsangaben.
-- **Session-Detail** mit dem kompletten Ablauf, gruppiert nach Blöcken und mit Zeiten.
-- **Player** mit 3-2-1-Auftakt, driftfreiem Countdown, Fortschritt für Übung *und*
-  Session, 20-Sekunden-Pausen zwischen den Übungen (Standbild der nächsten Übung,
-  eigener Ton), einer Ausführungszeile mit aufklappbaren Details, nächster Übung,
-  Ton-Toggle und Demo-Umschaltung Mann/Frau.
-- **Tastatur**: Leertaste = Start/Pause, ← → = Übung wechseln, `R` = von vorn,
-  `Esc` = zurück.
-- **Navigation**: drei Tabs unten; der Trainings-Tab wechselt zwischen Ablauf und
-  laufender Session. Wischen nach rechts geht ebenfalls zurück.
-- **Trainingslog** mit Streak, 7-Tage-Diagramm (Minuten), Gesamtzahlen und Liste,
-  dazu Sichern/Laden/Zurücksetzen des Verlaufs.
-- **Robustheit**: Wake Lock hält den Bildschirm während der Session wach, ein
-  Video-Fehler fällt auf Standbild plus Hinweis zurück, `prefers-reduced-motion`
-  schaltet Animationen ab.
-
-## Warum kein Framework
-
-Die App ist ein rein klientseitiges Werkzeug ohne Serverlogik: Zustand, Timer und
-Ansichten sind lokal, es gibt keine Datenbank, keine API, kein SEO-Ziel und keine
-geteilten Komponenten über mehrere Teams. Ein Static-Server plus ES-Module deckt das
-komplett ab – ohne Build, ohne `node_modules`, ohne Framework-Upgradepfad. Würde
-später Serverlogik dazukommen (Accounts, Sync, personalisierte Pläne), ist der
-Datenteil in `src/data/` framework-unabhängig und lässt sich direkt übernehmen.
-
-## Übungen auswählen
-
-`src/data/exercises.js` ist der einzige Ort, an dem Übungen stehen. Jede Übung
-braucht **keine Geräte und keine Möbel**: keine Klimmzugstange, keine Bank, keine
-Stufe, keine Ringe, keine Bänder.
-
-Das `equipment`-Feld des Quelldatensatzes reicht dafür **nicht** aus: Es nennt
-auch Übungen `body weight`, deren Demo-Clip eindeutig Gerät zeigt. Deshalb prüft
-`npm run validate` zweistufig – gegen das Datensatzfeld *und* gegen eine
-handgeprüfte Ausschlussliste (`NEEDS_APPARATUS`) in `scripts/validate.mjs`. Wie die
-Liste entstanden ist und welche Übungen zuletzt ersetzt wurden, steht in
-[BUNDLES.md](BUNDLES.md).
-
-Der Rhythmus steckt nicht in den Daten, sondern in Konstanten – Sessions enthalten
-nur Übungs-IDs:
+Sessions contain **only exercise ids**. The rhythm lives in four constants, which
+is why every session has the same length without storing a single timestamp:
 
 ```js
-export const SESSION_EXERCISES = 10;   // Übungen je Session
-export const PRIMER_SECONDS = 60;      // die erste Übung
-export const WORK_SECONDS = 40;        // alle weiteren
-export const REST_SECONDS = 20;        // Pause nach jeder Übung außer der letzten
+export const SESSION_EXERCISES = 10;   // exercises per session
+export const PRIMER_SECONDS = 60;      // the first one
+export const WORK_SECONDS = 40;        // all others
+export const REST_SECONDS = 20;        // rest after every exercise but the last
 
 // 60 + 9×40 + 9×20 = 600 s = 10:00
 ```
 
-Eine neue Session ist damit nur eine Liste von Blöcken mit Übungs-IDs:
+A new session is therefore just a list of blocks:
 
 ```js
 { id: "core-intensive", /* … */ blocks: [
@@ -189,24 +93,128 @@ Eine neue Session ist damit nur eine Liste von Blöcken mit Übungs-IDs:
 ] }
 ```
 
-## Medien, Daten und Lizenz
+The English strings for this data live in separate overlay files
+(`src/data/en.exercises.js`, `src/data/en.bundles.js`), so the catalog itself
+stays free of translation noise.
 
-Demo-Videos und Poster kommen aus
+## Project structure
+
+```
+index.html                      markup of all views (library, detail, player, dashboard)
+style.css                       design system – dark instrument panel, acid lime, mono digits
+manifest.webmanifest            name, colors and icons for the installation
+sw.js                           service worker: app shell for the offline start
+favicon.svg                     vector favicon (the same diamond as the header)
+src/app.js                      state, views, player control, filters, dashboard
+src/i18n.js                     UI strings for both languages + the localized data view
+src/timer.js                    drift-free session timer (based on timestamps, not ticks)
+src/audio.js                    countdown / transition / rest signals via WebAudio (no audio files)
+src/storage.js                  training history + settings (localStorage), stats, backup
+src/data/exercises.js           exercise catalog: media slug, focus, coaching text
+src/data/bundles.js             16 sessions: blocks of exercise ids, rhythm constants
+src/data/framing.js             per-exercise video crop (generated by scripts/framing.mjs)
+src/data/en.*.js                English display strings for the catalog and the sessions
+assets/icons/                   app icons (generated by scripts/icons.mjs)
+scripts/dev.mjs                 static server without dependencies
+scripts/validate.mjs            checks data, framing, installation and media
+scripts/framing.mjs             clip analysis: frame, zoom, pivot per exercise
+scripts/icons.mjs               app icon PNGs (Node standard library only)
+data/exercise-db-snapshot.json  snapshot of the source dataset (verification fields only)
+```
+
+## Run it locally
+
+```bash
+npm run dev          # http://127.0.0.1:5173
+PORT=4000 npm run dev
+```
+
+There is **no build step and no runtime dependency** — only Node ≥ 20 for the dev
+server, and no `npm install` is needed.
+
+```bash
+npm run validate        # 600 s per session, 10 exercises, 40/20 rhythm, no duplicates,
+                        # equipment-free only, framing present, PWA files, translations complete
+npm run validate:media  # additionally: every video and poster URL on the CDN answers 200
+npm run framing         # recompute the video crops (needs ffmpeg + a one-time `npm install`)
+npm run framing -- --only=<slug,...>   # re-measure single exercises only
+npm run icons           # generate the app icons in assets/icons (no dependency)
+```
+
+Only `npm run framing` needs a dependency (`jpeg-js`, dev-only). The app, the dev
+server and `npm run icons` run without `node_modules`.
+
+## Languages
+
+The interface and the whole exercise catalog exist in German and English. The
+switch sits in the header, the choice is remembered, and without a stored choice
+the app follows the browser language.
+
+Adding a third language means two things: a new overlay pair next to
+`src/data/en.exercises.js` and `src/data/en.bundles.js`, and one more entry in
+`STRINGS` in `src/i18n.js`. `npm run validate` fails when a translation is
+missing, when a text is still German, or when a translated view changes the
+structure of a session.
+
+## Design notes
+
+The training views are calculated for the display of an iPhone 16 Pro Max
+(440 × 956 CSS pixels):
+
+- **No page scrolling** in the plan and the player — they fill exactly the
+  visible height (`body.fit` in `style.css`); only the plan scrolls internally if
+  a device leaves even less room.
+- **Device edges**: spacing respects `env(safe-area-inset-*)` for the Dynamic
+  Island and the home indicator, and the navigation bar sits above it.
+- **Largest possible demo window**: the player shows the video edge to edge
+  (440 instead of 408 px) while keeping the measured 1.567:1 panel aspect from
+  `src/data/framing.js`.
+- **Little text, details on request**: each screen shows only what is needed to
+  decide or to train. Muscles, mistakes and breathing are one tap away.
+
+## Video framing
+
+The clips are 16:9 with a lot of empty background. `scripts/framing.mjs` measures
+every clip across **all frames** (ffmpeg, 6 fps) and derives the global panel
+aspect (1.567:1, taller than 16:9), the scene crop and the zoom per exercise — so
+the person appears bigger without anything being cut off in any frame. It then
+re-checks every frame with a finer threshold and stops if content touches the
+edge. `--only=<slug,...>` re-measures single exercises and keeps the rest.
+
+## Media, data and license
+
+Demo videos and posters come from
 [`luisaraujoc/free-exercise-db-api`](https://github.com/luisaraujoc/free-exercise-db-api)
-(MIT, 317 Übungen, männliche und weibliche Aufnahme je Übung) und werden direkt
-über deren R2-CDN geladen.
+(MIT, 317 exercises, a male and a female recording each) and are loaded directly
+from their R2 CDN.
 
-**Der Code dieses Projekts steht unter der MIT-Lizenz ([LICENSE](LICENSE)). Für
-die eingebundenen Medien gilt das nicht automatisch:** Sie stammen aus dem
-Quelldatensatz, dessen MIT-Bedingungen (Copyright-Hinweis und Lizenztext
-mitführen, keine Gewährleistung) für das Material weiter gelten – eine
-Weiterverwendung muss diese Bedingungen ebenfalls einhalten. Für das
-Videomaterial selbst ist die Rechtekette zusätzlich unklar; Einzelheiten, die
-Pflichten beim Weiterverwenden und der Weg zum Austausch der Medien stehen in
-[ATTRIBUTIONS.md](ATTRIBUTIONS.md). Der Aufbau der Sessions steht in
-[BUNDLES.md](BUNDLES.md).
+**This project's own code is MIT-licensed ([LICENSE](LICENSE)). That does not
+automatically cover the embedded media:** the media comes from the source dataset
+and its MIT conditions (carry the copyright notice and the license text, no
+warranty) continue to apply to that material — reusing it means meeting those
+conditions as well. On top of that, the chain of rights for the video material
+itself is unclear; the details, the obligations when reusing it and the way to
+swap the media are in [ATTRIBUTIONS.md](ATTRIBUTIONS.md). How the sessions are
+composed is documented in [BUNDLES.md](BUNDLES.md).
 
-Bekannte Grenzen: ohne Netzverbindung bleibt das Demo-Video leer (die App zeigt
-dann das Standbild), und für einige Übungen – `Front Plank`, `Reverse Crunch`,
-`Rotational Push-up`, `Lying Scissor Kick`, `Pilates Corkscrew` – gibt es im
-Datensatz nur die weibliche Aufnahme, weshalb der Umschalter dort deaktiviert ist.
+Picking exercises is deliberately conservative: the dataset's `equipment` field
+alone is **not** enough, because it labels some exercises `body weight` whose
+demo clearly shows a bench, a bar or a band. `npm run validate` therefore checks
+twice — against the dataset field *and* against a hand-checked exclusion list
+(`NEEDS_APPARATUS` in `scripts/validate.mjs`). [BUNDLES.md](BUNDLES.md) records
+how that list came about and which exercises were replaced.
+
+## Known limits
+
+- Without a network the demo video stays empty (the app then shows the still
+  image).
+- For five exercises — `Front Plank`, `Reverse Crunch`, `Rotational Push-up`,
+  `Lying Scissor Kick`, `Pilates Corkscrew` — the dataset only has the female
+  recording, so the demo switch is disabled there.
+- The English translation is an overlay: the German catalog stays the source of
+  truth and the English files only carry display strings.
+
+## License
+
+[MIT](LICENSE) for the code. The media is subject to the conditions of the source
+dataset — see [ATTRIBUTIONS.md](ATTRIBUTIONS.md).

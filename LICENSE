@@ -1,18 +1,17 @@
 MIT License
 
-Copyright (c) 2026 Pulse — 10 Minuten Training
+Copyright (c) 2026 Pulse — 10 Minute Training
 
-Diese Lizenz gilt für den Quellcode, die Texte, das Design und die
-Icon-Erzeugung dieses Projekts.
+This license covers the source code, the texts, the design and the icon
+generation of this project.
 
-NICHT automatisch mitlizenziert sind die eingebundenen Übungsmedien
-(Demo-Videos und Poster) sowie die daraus übernommenen Metadaten: Sie stammen aus
-dem Datensatz `luisaraujoc/free-exercise-db-api` und unterliegen weiterhin dessen
-MIT-Bedingungen. Bei einer Weiterverwendung dieses Materials sind der
-ursprüngliche Copyright- und Lizenzhinweis mitzuführen und die
-Gewährleistungsausschlüsse zu übernehmen. Für die Rechtekette des Videomaterials
-bestehen zusätzliche Vorbehalte; Einzelheiten stehen in ATTRIBUTIONS.md. Wer das
-Material nutzt, trägt dafür die Verantwortung.
+NOT automatically covered are the linked exercise media (demo videos and posters)
+and the metadata taken from them: they come from the `luisaraujoc/free-exercise-db-api`
+dataset and remain subject to its MIT terms. Anyone reusing that material must keep
+the original copyright and license notice and accept its warranty disclaimers.
+Additional caveats apply to the rights chain of the video material; see
+ATTRIBUTIONS.md for details. Whoever uses that material carries the responsibility
+for it.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

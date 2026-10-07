@@ -1,69 +1,69 @@
-# Übungsmedien: Herkunft und Nutzung
+# Exercise media: origin and usage
 
-## Quelle
+## Source
 
-Alle Demo-Videos und Standbilder kommen aus
+All demo videos and stills come from
 [`luisaraujoc/free-exercise-db-api`](https://github.com/luisaraujoc/free-exercise-db-api)
-und werden direkt über das dort verlinkte Cloudflare-R2-CDN geladen:
+and are loaded directly from the Cloudflare R2 CDN linked there:
 
 ```
 https://pub-585d42eb1aa64a67aedf483ec328d3fe.r2.dev/exercise-videos/<male|female>/<slug>.mp4
 https://pub-585d42eb1aa64a67aedf483ec328d3fe.r2.dev/exercise-posters/<male|female>/<slug>.jpg
 ```
 
-- **Datensatz**: 317 Übungen, 10 Körperregionen, je Übung eine männliche und
-  (meist) eine weibliche 1080p-Aufnahme plus Poster.
-- `data/exercise-db-snapshot.json` ist eine Momentaufnahme dieses Datensatzes,
-  gekürzt auf die Felder, die `npm run validate` braucht (Name, `equipment`,
-  Video-URLs). Sie wird nur zur Prüfung verwendet, nicht im Browser geladen.
+- **Dataset**: 317 exercises, 10 body regions, one male and (usually) one female
+  1080p recording plus a poster per exercise.
+- `data/exercise-db-snapshot.json` is a snapshot of that dataset, trimmed to the
+  fields `npm run validate` needs (name, `equipment`, video URLs). It is used for
+  validation only and is never loaded in the browser.
 
-## Herkunft & Lizenz – was gilt
+## Origin & license — what applies
 
-- **Code dieses Projekts**: MIT, siehe [LICENSE](LICENSE). Copyright-Hinweis und
-  Lizenztext mitführen, keine Gewährleistung.
-- **Quelldatensatz**: Das Quell-Repo stellt in seinem Abschnitt „License“ klar:
-  *„Code and exercise metadata are released under the MIT License“* – die
-  MIT-Angabe deckt also **Code und Übungs-Metadaten**, nicht ausdrücklich die
-  Videodateien. Diese Lizenzangabe wird hier **nicht** ersetzt oder
-  umgeschrieben. Wer Metadaten von dort weiterverwendet, muss die Bedingungen
-  der MIT-Lizenz des Ursprungs einhalten – insbesondere den Copyright- und
-  Lizenzhinweis mitliefern und die Gewährleistungsausschlüsse übernehmen.
-- **Diese App reicht die Medien nur durch**: Sie werden zur Laufzeit vom CDN des
-  Quell-Repos gestreamt, sind hier nicht eingebettet und werden nicht
-  weiterlizenziert. Es werden keine Videodateien mit dem Repository verteilt.
-- **Keine Zusicherung über die Rechtekette des Videomaterials**: siehe unten.
+- **Code of this project**: MIT, see [LICENSE](LICENSE). Keep the copyright
+  notice and the license text, no warranty.
+- **Upstream dataset**: in its "License" section the source repo states:
+  *"Code and exercise metadata are released under the MIT License"* — so its MIT
+  grant explicitly covers **code and exercise metadata**, not the video files.
+  That license statement is **not** replaced or rewritten here. Anyone reusing
+  metadata from there has to comply with the terms of the upstream MIT license —
+  in particular by shipping the copyright and license notice and by taking over
+  the warranty disclaimers.
+- **This app only passes the media through**: it is streamed at runtime from the
+  source repo's CDN, is not embedded here, and is not relicensed. No video files
+  are distributed with this repository.
+- **No assurance about the rights chain of the video material**: see below.
 
-### Wichtiger Vorbehalt zur Herkunft der Videos
+### Important caveat about the origin of the videos
 
-Das Quell-Repo schreibt in seinem README unter
-*„Where did the videos come from?“* offen, dass die Videos **nicht selbst gedreht**
-wurden: Der Maintainer hat sie über eine Werbeanzeige gekauft und weiß nicht, wo
-der Verkäufer sie her hat – mit dem ausdrücklichen Hinweis *„So use with caution.“*
-Für das Videomaterial ist die Rechtekette damit **nicht** belegt; das Repo bittet
-Rechteinhaber ausdrücklich, sich zu melden, und nimmt das Material dann sofort
-herunter.
+In its README, under *"Where did the videos come from?"*, the source repo openly
+states that the videos were **not filmed by the maintainer**: he bought them
+through an ad and does not know where the seller got them — with the explicit
+warning *"So use with caution."* The rights chain for the video material is
+therefore **not** established; the repo explicitly asks rights holders to get in
+touch and takes the material down right away in that case.
 
-Konsequenz für dieses Projekt: Die Medien sind hier für den lokalen/privaten
-Gebrauch eingebunden. Vor einer Veröffentlichung oder kommerziellen Nutzung muss
-entweder die Herkunft geklärt oder auf eigenes bzw. klar lizenziertes Material
-umgestellt werden. Der Austausch ist vorbereitet: Medien werden ausschließlich
-über `videoUrl()` / `posterUrl()` in `src/data/exercises.js` gebildet – Base-URL
-(`CDN`) und Slugs pro Übung anpassen genügt. Anschließend `npm run framing`
-und `npm run validate:media` laufen lassen.
+Consequence for this project: this repository is public and links to that CDN, so
+it is *not* a commercial product and no media files are redistributed — but the
+residual risk sits with anyone deploying or commercialising it. If you fork this
+for anything beyond personal use, either clarify the origin or switch the material
+to your own or clearly licensed footage. The swap is prepared for: media URLs are
+built exclusively through `videoUrl()` / `posterUrl()` in `src/data/exercises.js`
+— adapting the base URL (`CDN`) and the per-exercise slugs is enough. Afterwards
+run `npm run framing` and `npm run validate:media`.
 
-## Was dieses Projekt selbst hinzufügt
+## What this project adds itself
 
-- Auswahl der 63 gerätefreien Übungen und Zusammenstellung der 16 Sessions
-  (`src/data/bundles.js`).
-- Die Prüfung auf Geräte: Sichtung aller Demo-Clips (Poster und Mittelframes) und
-  eine handgeführte Ausschlussliste in `scripts/validate.mjs`. Das
-  `equipment`-Feld des Datensatzes ist nachweislich fehlerhaft; drei Übungen
-  wurden deshalb ersetzt (Details in [BUNDLES.md](BUNDLES.md)).
-- Deutsche Fokuskategorien, Kurztexte und Coaching-Zeilen (Ausführung, typischer
-  Fehler, Atmung) je Übung in `src/data/exercises.js`. Sie sind verdichtete
-  deutsche Fassungen der englischen `formCues` / `commonMistakes` / `breathing`
-  des Datensatzes.
-- Der gemessene Bildausschnitt je Übung (`src/data/framing.js`), erzeugt aus den
-  Clips mit `scripts/framing.mjs`.
-- Alle übrigen Inhalte (Markup, Design, Timer, Pausensignale, Trainingslog,
-  Installation als Web-App) sind Teil dieses Projekts.
+- The selection of the 63 equipment-free exercises and the composition of the 16
+  sessions (`src/data/bundles.js`).
+- The equipment audit: reviewing every demo clip (posters and mid-clip frames)
+  plus a hand-maintained exclusion list in `scripts/validate.mjs`. The dataset's
+  `equipment` field is demonstrably wrong; three exercises were replaced because
+  of it (details in [BUNDLES.md](BUNDLES.md)).
+- German focus categories, short texts and coaching lines (execution, common
+  mistake, breathing) per exercise in `src/data/exercises.js`. They are condensed
+  German renderings of the dataset's English `formCues` / `commonMistakes` /
+  `breathing`.
+- The measured framing per exercise (`src/data/framing.js`), generated from the
+  clips with `scripts/framing.mjs`.
+- Everything else (markup, design, timer, rest cues, training log, installation
+  as a web app) is part of this project.

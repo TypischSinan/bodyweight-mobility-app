@@ -1,10 +1,15 @@
 /**
- * Persistenz: Trainingshistorie und Einstellungen in localStorage.
- * Alle Zugriffe sind gekapselt, damit ein leerer oder privater Speicher die App
- * nicht bricht.
+ * Persistence: training history and settings in localStorage. All access is
+ * wrapped so that an empty or private storage does not break the app.
  */
 const HISTORY_KEY = "pulse.history.v1";
 const PREFS_KEY = "pulse.prefs.v1";
+
+/**
+ * Errors carry a stable `code`; the app translates it (src/i18n.js), so the
+ * messages follow the selected language instead of being fixed here.
+ */
+const failure = (code) => Object.assign(new Error(`backup: ${code}`), { code });
 const HISTORY_LIMIT = 200;
 const BACKUP_VERSION = 1;
 
@@ -23,7 +28,7 @@ function write(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    /* Speicher voll oder gesperrt – die Session läuft trotzdem weiter */
+    /* storage full or locked – the session keeps running anyway */
   }
 }
 
@@ -51,8 +56,8 @@ export function clearHistory() {
 }
 
 /**
- * Sicherung erzeugen. Der Fortschritt liegt nur im localStorage dieses Browsers –
- * verschwindet der (Websitedaten löschen, Gerätewechsel), wäre er sonst weg.
+ * Build a backup. The progress only lives in this browser's localStorage – if that
+ * is gone (clearing website data, switching devices) it would be lost for good.
  */
 export function createBackup() {
   return {
@@ -65,9 +70,9 @@ export function createBackup() {
 }
 
 /**
- * Sicherung einlesen und mit dem vorhandenen Verlauf zusammenführen (gleiche
- * Session wird nicht doppelt gezählt). Wirft einen Fehler mit lesbarer Meldung,
- * wenn die Datei nicht passt.
+ * Read a backup and merge it into the existing history (the same session is not
+ * counted twice). Throws an error with a readable message when the file does not
+ * fit.
  */
 export function restoreBackup(input) {
   let data = input;
@@ -75,15 +80,15 @@ export function restoreBackup(input) {
     try {
       data = JSON.parse(input);
     } catch {
-      throw new Error("Die Datei ist keine gültige Pulse-Sicherung.");
+      throw failure("invalidFile");
     }
   }
   if (!data || typeof data !== "object" || !Array.isArray(data.history)) {
-    throw new Error("In der Datei fehlt der Trainingsverlauf.");
+    throw failure("noHistory");
   }
 
   const incoming = data.history.filter((entry) => entry && entry.bundleId && entry.finishedAt);
-  if (!incoming.length) throw new Error("Die Sicherung enthält keine Sessions.");
+  if (!incoming.length) throw failure("noSessions");
 
   const existing = loadHistory();
   const merged = new Map();
@@ -109,6 +114,8 @@ export function restoreBackup(input) {
 export function loadPrefs() {
   const prefs = read(PREFS_KEY, {});
   return {
+    // null = not chosen yet; the app then follows the browser language.
+    lang: LANGUAGES.includes(prefs.lang) ? prefs.lang : null,
     gender: prefs.gender === "female" ? "female" : "male",
     sound: prefs.sound !== false,
     lastBundleId: typeof prefs.lastBundleId === "string" ? prefs.lastBundleId : null,
@@ -121,12 +128,14 @@ export function savePrefs(patch) {
   return next;
 }
 
+const LANGUAGES = ["de", "en"];
+
 const dayKey = (date) => {
   const d = new Date(date);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-export function computeStats(history) {
+export function computeStats(history, locale = "de-DE") {
   const today = new Date();
   const todayKey = dayKey(today);
 
@@ -139,7 +148,7 @@ export function computeStats(history) {
     byDay.set(key, current);
   }
 
-  // Tage für das 7-Tage-Diagramm (heute als letzter Eintrag)
+  // Days for the 7-day chart (today as the last entry)
   const days = [];
   for (let offset = 6; offset >= 0; offset -= 1) {
     const date = new Date(today);
@@ -148,13 +157,13 @@ export function computeStats(history) {
     const data = byDay.get(key) ?? { sessions: 0, minutes: 0 };
     days.push({
       key,
-      label: date.toLocaleDateString("de-DE", { weekday: "short" }).replace(".", ""),
+      label: date.toLocaleDateString(locale, { weekday: "short" }).replace(".", ""),
       isToday: key === todayKey,
       ...data,
     });
   }
 
-  // Streak: heute zählt, solange heute noch nicht trainiert wurde auch gestern
+  // Streak: today counts; as long as nothing was done today, yesterday counts too
   let streak = 0;
   const cursor = new Date(today);
   if (!byDay.has(todayKey)) cursor.setDate(cursor.getDate() - 1);

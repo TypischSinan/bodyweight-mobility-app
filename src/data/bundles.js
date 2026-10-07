@@ -1,14 +1,14 @@
 import { EXERCISES } from "./exercises.js";
 
 /**
- * Sessions. Jede Session:
- *  - hat genau 10 Übungen und dauert exakt 10:00 (600 Sekunden: 60 s Primer,
- *    9×40 s Arbeit und 9×20 s Pause dazwischen, geprüft in scripts/validate.mjs),
- *  - enthält jede Übung höchstens einmal,
- *  - ist in Blöcke gegliedert (Primer → Arbeit → Cool-down bzw. Flow → Halten),
- *  - nutzt ausschließlich gerätefreie Übungen aus dem Katalog.
+ * Sessions. Every session:
+ *  - has exactly 10 exercises and lasts exactly 10:00 (600 seconds: 60 s primer,
+ *    9×40 s work and 9×20 s rest in between, checked in scripts/validate.mjs),
+ *  - contains every exercise at most once,
+ *  - is organised in blocks (primer → work → core → cool-down or flow → holds),
+ *  - uses equipment-free exercises from the catalog only.
  *
- * Zeiten stehen bewusst nicht in den Daten: sie folgen dem festen Rhythmus.
+ * Times are deliberately not part of the data: they follow the fixed rhythm.
  */
 export const BUNDLES = [
   {
@@ -546,24 +546,30 @@ export const CATEGORY_LABELS = {
 };
 
 /*
- * Rhythmus jeder Session: 10 Übungen. Die erste (Primer) läuft 60 s, jede
- * weitere 40 s, dazwischen liegen jeweils 20 s Pause:
+ * Rhythm of every session: 10 exercises. The first one (primer) runs 60 s, each
+ * further one 40 s, with 20 s of rest in between:
  *
  *   60 + 9×40 + 9×20 = 600 s = 10:00
  *
- * Die Blöcke der Sessions enthalten deshalb nur noch Übungs-IDs – die Zeiten
- * ergeben sich aus dieser Regel (geprüft in scripts/validate.mjs).
+ * That is why the session blocks only contain exercise ids – the times follow
+ * from this rule (checked in scripts/validate.mjs).
  */
 export const SESSION_EXERCISES = 10;
 export const PRIMER_SECONDS = 60;
 export const WORK_SECONDS = 40;
 export const REST_SECONDS = 20;
 
-/** Arbeitseinheiten einer Session in Reihenfolge: [{ id, exercise, block }] */
-export function bundleWork(bundle) {
+/**
+ * Work units of a session in order: [{ id, exercise, block }]
+ *
+ * `catalog` is the exercise dictionary to resolve the ids against – the app
+ * hands in the language-specific one, so that work units carry display strings
+ * in the selected language (see src/i18n.js).
+ */
+export function bundleWork(bundle, catalog = EXERCISES) {
   return bundle.blocks.flatMap((block) =>
     block.items.map((item) => {
-      const exercise = EXERCISES[item.id];
+      const exercise = catalog[item.id];
       if (!exercise) throw new Error(`Unbekannte Übung "${item.id}" in Session "${bundle.id}"`);
       return { id: item.id, exercise, block: block.label };
     }),
@@ -571,12 +577,12 @@ export function bundleWork(bundle) {
 }
 
 /**
- * Abfolge des Players: Arbeit und Pausen abwechselnd. Pausen tragen `rest: true`
- * und zeigen die nächste Übung an (`nextExercise`); nach der letzten Übung folgt
- * keine Pause mehr.
+ * Player sequence: work and rest alternating. Rests carry `rest: true` and point
+ * at the upcoming exercise (`nextExercise`); after the last exercise there is no
+ * further rest.
  */
-export function bundleSequence(bundle) {
-  const work = bundleWork(bundle);
+export function bundleSequence(bundle, catalog = EXERCISES) {
+  const work = bundleWork(bundle, catalog);
   const sequence = [];
 
   work.forEach((entry, index) => {
@@ -603,7 +609,7 @@ export function bundleSequence(bundle) {
 
 const workSecondsAt = (index) => (index === 0 ? PRIMER_SECONDS : WORK_SECONDS);
 
-/** Gesamtdauer einer Session in Sekunden – Arbeit plus eingestreute Pausen. */
+/** Total duration of a session in seconds – work plus the interleaved rests. */
 export function bundleSeconds(bundle) {
   const count = bundleExerciseCount(bundle);
   if (count === 0) return 0;
@@ -612,7 +618,7 @@ export function bundleSeconds(bundle) {
   return work + pauses;
 }
 
-/** Dauer eines Blocks inklusive der Pausen zwischen seinen Übungen. */
+/** Duration of a block including the rests between its exercises. */
 export function blockSeconds(bundle, blockIndex) {
   const total = bundleExerciseCount(bundle);
   const before = bundle.blocks

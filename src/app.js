@@ -1,15 +1,5 @@
+import { posterUrl, videoUrl, availableGender } from "./data/exercises.js";
 import {
-  EXERCISES,
-  FOCUS_LABELS,
-  KIND_LABELS,
-  posterUrl,
-  videoUrl,
-  availableGender,
-} from "./data/exercises.js";
-import {
-  BUNDLES,
-  CATEGORIES,
-  CATEGORY_LABELS,
   PRIMER_SECONDS,
   WORK_SECONDS,
   blockSeconds,
@@ -19,6 +9,7 @@ import {
   formatDuration,
 } from "./data/bundles.js";
 import { FRAMING, PANEL_ASPECT } from "./data/framing.js";
+import { LANGUAGES, applyStaticText, buildData, locale, t } from "./i18n.js";
 import { createSessionTimer } from "./timer.js";
 import { createCues } from "./audio.js";
 import {
@@ -101,15 +92,21 @@ const dom = {
   liveRegion: $("live-region"),
   navItems: Array.from(document.querySelectorAll(".nav-item")),
   brandLink: $("brand-link"),
+  langSwitch: $("lang-switch"),
+  langButtons: Array.from(document.querySelectorAll(".lang-switch button")),
 };
 
 let prefs = loadPrefs();
+// The language is a preference; without a stored choice the browser decides.
+let lang = prefs.lang ?? (navigator.language?.toLowerCase().startsWith("de") ? "de" : "en");
+// Catalog and sessions in the active language (see src/i18n.js).
+let data = buildData(lang);
 const cues = createCues();
 cues.setEnabled(prefs.sound);
 
 const filters = { category: "all", focus: "all" };
-// detailId = was im Detail-Schirm gewählt wurde, activeBundle = was im Player geladen ist.
-// Beides zu vermischen hätte den Timer der vorigen Session weiterlaufen lassen.
+// detailId = the session picked on the detail screen, activeBundle = the one loaded in the player.
+// Mixing the two would have kept the previous session's timer running.
 const state = { view: "library", detailId: null, hasSession: false };
 
 let timer = null;
@@ -123,9 +120,9 @@ let nextPosterKey = "";
 const pad = (value) => String(value).padStart(2, "0");
 const secondsToDigit = (ms) => Math.ceil(ms / 1000);
 
-/* ----------------------------------------------------------- Bibliothek */
+/* --------------------------------------------------------------- Library */
 function renderCategoryFilters() {
-  dom.categoryFilters.innerHTML = CATEGORIES.map(
+  dom.categoryFilters.innerHTML = data.categories.map(
     (category) => `<button class="filter-button" type="button" data-category="${category.id}" aria-pressed="${
       filters.category === category.id
     }">${category.label}</button>`,
@@ -141,14 +138,17 @@ function renderCategoryFilters() {
 }
 
 function renderFocusSelect() {
-  const options = [{ id: "all", label: "Alle Foki" }, ...Object.entries(FOCUS_LABELS).map(([id, label]) => ({ id, label }))];
+  const options = [
+    { id: "all", label: t(lang, "focus.all") },
+    ...Object.entries(data.focusLabels).map(([id, label]) => ({ id, label })),
+  ];
   dom.focusSelect.innerHTML = options
     .map((option) => `<option value="${option.id}">${option.label}</option>`)
     .join("");
   dom.focusSelect.value = filters.focus;
 }
 
-/** Karte bewusst textarm: Nummer, Titel, eine Metazeile. Details stehen im Detail-Schirm. */
+/** Deliberately text-light card: number, title, one meta line. Details live on the detail screen. */
 function sessionCard(bundle, index) {
   const minutes = Math.round(bundleSeconds(bundle) / 60);
   const intensity = [1, 2, 3]
@@ -161,17 +161,17 @@ function sessionCard(bundle, index) {
       <span>
         <strong class="bundle-title">${bundle.title}</strong>
         <span class="bundle-meta">
-          <span>${CATEGORY_LABELS[bundle.category]}</span><i aria-hidden="true"></i>
-          <span>${minutes} Min</span><i aria-hidden="true"></i>
-          <span>${bundleExerciseCount(bundle)} Übungen</span>
-          <span class="intensity" title="Intensität ${bundle.intensity} von 3">${intensity}</span>
+          <span>${data.categoryLabels[bundle.category]}</span><i aria-hidden="true"></i>
+          <span>${t(lang, "card.minutes", minutes)}</span><i aria-hidden="true"></i>
+          <span>${t(lang, "card.exercises", bundleExerciseCount(bundle))}</span>
+          <span class="intensity" title="${t(lang, "card.intensity", bundle.intensity)}">${intensity}</span>
         </span>
       </span>
     </button>`;
 }
 
 function renderLibrary() {
-  const visible = BUNDLES.filter(
+  const visible = data.bundles.filter(
     (bundle) =>
       (filters.category === "all" || bundle.category === filters.category) &&
       (filters.focus === "all" || bundle.focus === filters.focus),
@@ -180,7 +180,9 @@ function renderLibrary() {
   dom.bundleList.innerHTML = visible.map(sessionCard).join("");
   dom.libraryEmpty.hidden = visible.length > 0;
   dom.resultCount.textContent =
-    visible.length === BUNDLES.length ? `${BUNDLES.length} Sessions` : `${visible.length} von ${BUNDLES.length}`;
+    visible.length === data.bundles.length
+      ? t(lang, "count.sessions", data.bundles.length)
+      : t(lang, "count.range", visible.length, data.bundles.length);
 
   dom.bundleList.querySelectorAll(".bundle-card").forEach((card) => {
     card.addEventListener("click", () => openDetail(card.dataset.bundle));
@@ -192,14 +194,14 @@ function renderDetail(bundle) {
   const total = bundleSeconds(bundle);
   const count = bundleExerciseCount(bundle);
 
-  dom.detailCategory.textContent = `${CATEGORY_LABELS[bundle.category]} · ${bundle.level}`;
+  dom.detailCategory.textContent = `${data.categoryLabels[bundle.category]} · ${bundle.level}`;
   dom.detailTitle.textContent = bundle.title;
   dom.detailSummary.textContent = bundle.summary;
-  // Eine einzige Zeile: Dauer, Anzahl und Fokus. Alles Weitere steht im Ablauf.
+  // A single line: duration, count and focus. Everything else is in the plan.
   dom.detailMetaLine.textContent = [
     formatDuration(total),
-    `${count} Übungen`,
-    FOCUS_LABELS[bundle.focus] ?? bundle.focus,
+    t(lang, "card.exercises", count),
+    data.focusLabels[bundle.focus] ?? bundle.focus,
   ].join(" · ");
 
   let counter = 0;
@@ -208,13 +210,13 @@ function renderDetail(bundle) {
       const items = block.items
         .map((item) => {
           counter += 1;
-          // Erste Übung ist der 60-Sekunden-Primer, alle weiteren laufen 40 s;
-          // danach steht jeweils die 20-Sekunden-Pause (+20).
+          // The first exercise is the 60-second primer, the rest run 40 s;
+          // the trailing "+20" is the 20-second rest that follows it.
           const seconds = counter === 1 ? PRIMER_SECONDS : WORK_SECONDS;
           const pause = counter < count ? `<i>+20</i>` : "";
           return `<div class="plan-item">
             <span class="plan-index">${pad(counter)}</span>
-            <span class="plan-name">${EXERCISES[item.id].name}</span>
+            <span class="plan-name">${data.exercises[item.id].name}</span>
             <span class="plan-time">${seconds}s${pause}</span>
           </div>`;
         })
@@ -235,8 +237,8 @@ function playMedia() {
   if (playback && typeof playback.catch === "function") playback.catch(() => {});
 }
 
-// Bildausschnitt je Übung: schneidet nur leeren Hintergrund weg, die Person
-// bleibt in jedem Frame sichtbar (siehe scripts/framing.mjs).
+// Per-exercise crop: it only trims empty background, so the person stays
+// visible in every frame (see scripts/framing.mjs).
 function applyFraming(exercise) {
   const framing = FRAMING[exercise.id] ?? { zoom: 1, x: 0.5, y: 0.5, objectX: 0.5 };
   const root = document.documentElement.style;
@@ -259,12 +261,12 @@ function setMedia(exercise, force = false) {
   dom.mediaNote.hidden = true;
   dom.poster.src = posterUrl(exercise, prefs.gender);
   dom.media.src = videoUrl(exercise, prefs.gender);
-  dom.media.setAttribute("aria-label", `Demo: ${exercise.name}`);
+  dom.media.setAttribute("aria-label", t(lang, "media.demoLabel", exercise.name));
   dom.media.load();
   playMedia();
 }
 
-/** In der Pause steht statt des Videos das Standbild der nächsten Übung. */
+/** During a rest the still image of the next exercise replaces the video. */
 function setRestMedia(exercise) {
   const key = `rest:${exercise.slug}`;
   if (key === lastMediaKey) return;
@@ -276,10 +278,10 @@ function setRestMedia(exercise) {
   dom.mediaNote.hidden = true;
   dom.poster.hidden = false;
   dom.poster.src = posterUrl(exercise, prefs.gender);
-  dom.poster.alt = `Als Nächstes: ${exercise.name}`;
+  dom.poster.alt = t(lang, "media.restAlt", exercise.name);
 }
 
-// Falls der Browser die Wiedergabe gedrosselt oder blockiert hat, später nachholen.
+// If the browser throttled or blocked playback, catch up on it later.
 dom.media.addEventListener("canplay", () => {
   if (dom.media.paused && !dom.media.hidden) playMedia();
 });
@@ -288,7 +290,7 @@ dom.media.addEventListener("error", () => {
   dom.media.hidden = true;
   dom.poster.hidden = false;
   dom.mediaNote.hidden = false;
-  dom.mediaNote.textContent = "Demo-Video gerade nicht erreichbar – Standbild wird gezeigt.";
+  dom.mediaNote.textContent = t(lang, "media.offline");
 });
 
 function setStartButton(mode, label) {
@@ -303,14 +305,14 @@ function setStartButton(mode, label) {
   dom.startButton.removeAttribute("aria-busy");
   if (mode === "run") {
     dom.startIcon.textContent = "Ⅱ";
-    dom.startLabel.textContent = "Pause";
+    dom.startLabel.textContent = t(lang, "player.pause");
   } else {
     dom.startIcon.textContent = "▶";
-    dom.startLabel.textContent = "Start";
+    dom.startLabel.textContent = t(lang, "player.start");
   }
 }
 
-/** Nächste Arbeitseinheit nach `index` (Pausen werden übersprungen). */
+/** Next work item after `index` (rests are skipped). */
 function workItemAfter(index) {
   for (let i = index + 1; i < sequence.length; i += 1) {
     if (!sequence[i].rest) return sequence[i];
@@ -323,15 +325,15 @@ function renderPlayer({ announce = false } = {}) {
   const snapshot = timer.state();
   const item = sequence[snapshot.index];
   const isRest = Boolean(item.rest);
-  // In der Pause zeigt der Schirm schon die nächste Übung.
+  // During a rest the screen already shows the next exercise.
   const shown = isRest ? item.nextExercise : item.exercise;
   const after = isRest ? workItemAfter(snapshot.index + 1) : workItemAfter(snapshot.index);
   const left = secondsToDigit(snapshot.remaining);
 
-  // Position als Übungszähler: während der Pause steht dort schon die nächste
-  // Übung, die der Schirm zeigt.
+  // Position counts exercises: during a rest it already shows the exercise
+  // the screen is displaying.
   const done = sequence.slice(0, snapshot.index + 1).filter((entry) => !entry.rest).length;
-  dom.playerBlock.textContent = isRest ? "Pause" : item.block;
+  dom.playerBlock.textContent = isRest ? t(lang, "player.blockRest") : item.block;
   dom.playerTitle.textContent = activeBundle.title;
   dom.playerIndex.textContent = pad(isRest ? done + 1 : done);
   dom.playerTotal.textContent = pad(bundleExerciseCount(activeBundle));
@@ -341,15 +343,17 @@ function renderPlayer({ announce = false } = {}) {
   dom.sessionProgress.style.width = `${Math.min(100, snapshot.sessionProgress * 100)}%`;
   dom.sessionLeft.textContent = formatDuration(Math.round(snapshot.sessionRemaining / 1000));
 
-  dom.mediaKind.textContent = isRest ? "Pause · gleich" : KIND_LABELS[shown.kind] ?? "Übung";
+  dom.mediaKind.textContent = isRest
+    ? t(lang, "player.restBadge")
+    : (data.kindLabels[shown.kind] ?? t(lang, "player.kindFallback"));
   dom.exerciseName.textContent = shown.name;
   dom.exerciseSub.textContent = shown.sub;
   dom.cueText.textContent = shown.cue;
   dom.mistakeText.textContent = shown.mistake;
   dom.breathText.textContent = shown.breath;
-  dom.nextName.textContent = after ? after.exercise.name : "Fertig";
+  dom.nextName.textContent = after ? after.exercise.name : t(lang, "player.done");
 
-  // Poster der nächsten Übung vorladen, damit der Wechsel nicht hängt.
+  // Preload the next poster so the switch does not stutter.
   if (nextPosterKey !== shown.slug) {
     nextPosterKey = shown.slug;
     const preload = new Image();
@@ -358,25 +362,30 @@ function renderPlayer({ announce = false } = {}) {
 
   dom.genderToggle.disabled = Boolean(shown.only);
   dom.genderToggle.title = shown.only
-    ? "Für diese Übung gibt es nur eine Demo-Aufnahme."
-    : "Demo-Aufnahme wechseln (Mann / Frau)";
+    ? t(lang, "player.genderOnlyOne")
+    : t(lang, "player.genderTitle");
 
   if (isRest) setRestMedia(shown);
   else setMedia(shown);
+
+  // The labels follow the selected language even when the media itself does not
+  // change – a language switch must not leave the previous wording behind.
+  dom.media.setAttribute("aria-label", t(lang, "media.demoLabel", shown.name));
+  dom.poster.alt = isRest ? t(lang, "media.restAlt", shown.name) : "";
 
   if (!leadInTimer) setStartButton(snapshot.running ? "run" : "idle");
 
   if (announce) {
     dom.liveRegion.textContent = isRest
-      ? `Pause, ${item.seconds} Sekunden. Als Nächstes ${shown.name}. ${shown.cue}.`
-      : `${shown.name}, ${item.seconds} Sekunden. ${shown.cue}.`;
+      ? t(lang, "announce.rest", item.seconds, shown.name, shown.cue)
+      : t(lang, "announce.exercise", shown.name, item.seconds, shown.cue);
   }
 }
 
 function buildTimer(bundle) {
   if (timer) timer.destroy();
   activeBundle = bundle;
-  sequence = bundleSequence(bundle);
+  sequence = bundleSequence(bundle, data.exercises);
   lastMediaKey = "";
 
   timer = createSessionTimer({
@@ -394,7 +403,7 @@ function buildTimer(bundle) {
 function setDetailsOpen(open) {
   dom.detailsPanel.hidden = !open;
   dom.detailsToggle.setAttribute("aria-expanded", String(open));
-  dom.detailsToggle.textContent = open ? "Weniger" : "Details";
+  dom.detailsToggle.textContent = open ? t(lang, "player.less") : t(lang, "player.details");
 }
 
 function openPlayer(bundle, { autostart = false } = {}) {
@@ -402,7 +411,7 @@ function openPlayer(bundle, { autostart = false } = {}) {
   if (!isLoaded) {
     buildTimer(bundle);
   } else if (timer.state().finished) {
-    // Eine abgeschlossene Session beginnt beim erneuten Öffnen wieder von vorn.
+    // Reopening a finished session starts it over from the beginning.
     timer.reset();
   }
   state.hasSession = true;
@@ -439,13 +448,13 @@ function startSession() {
   }
 
   let countdown = 3;
-  setStartButton("busy", `Bereit ${countdown}`);
+  setStartButton("busy", t(lang, "player.ready", countdown));
   cues.cue("count");
   const step = () => {
     countdown -= 1;
     if (countdown > 0) {
       cues.cue("count");
-      setStartButton("busy", `Bereit ${countdown}`);
+      setStartButton("busy", t(lang, "player.ready", countdown));
       leadInTimer = setTimeout(step, 800);
       return;
     }
@@ -461,7 +470,27 @@ function startTimer() {
   requestWakeLock();
 }
 
-/* -------------------------------------------------------------- Abschluss */
+/* ------------------------------------------------------------- Completion */
+// Kept so that a language switch can redraw the summary that is on screen.
+let lastCompletion = null;
+
+/** Draws the summary of a finished session in the active language. */
+function renderCompletion({ entry, stats }) {
+  dom.completionTitle.textContent = t(lang, "completion.done", activeBundle?.title ?? "");
+  dom.completionStats.innerHTML = [
+    [t(lang, "completion.duration"), formatDuration(Math.round(entry.seconds / 60) * 60)],
+    [t(lang, "completion.exercises"), `${bundleExerciseCount(activeBundle)}`],
+    [
+      t(lang, "completion.streak"),
+      stats.streak === 1
+        ? t(lang, "completion.day", stats.streak)
+        : t(lang, "completion.days", stats.streak),
+    ],
+  ]
+    .map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`)
+    .join("");
+}
+
 function saveCompletedSession() {
   const entry = addSession({
     bundleId: activeBundle.id,
@@ -469,16 +498,8 @@ function saveCompletedSession() {
     category: activeBundle.category,
     seconds: bundleSeconds(activeBundle),
   });
-  const stats = computeStats(loadHistory());
-
-  dom.completionTitle.textContent = `${activeBundle.title} geschafft.`;
-  dom.completionStats.innerHTML = [
-    ["Dauer", formatDuration(Math.round(entry.seconds / 60) * 60)],
-    ["Übungen", `${bundleExerciseCount(activeBundle)}`],
-    ["Streak", `${stats.streak} ${stats.streak === 1 ? "Tag" : "Tage"}`],
-  ]
-    .map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`)
-    .join("");
+  lastCompletion = { entry, stats: computeStats(loadHistory(), locale(lang)) };
+  renderCompletion(lastCompletion);
 
   dom.completionModal.hidden = false;
   dom.completionClose.focus();
@@ -494,7 +515,7 @@ function closeCompletion() {
 
 /* -------------------------------------------------------------- Dashboard */
 function renderDashboard() {
-  const stats = computeStats(loadHistory());
+  const stats = computeStats(loadHistory(), locale(lang));
   const maxMinutes = Math.max(10, ...stats.days.map((day) => day.minutes));
 
   dom.streakCount.textContent = String(stats.streak);
@@ -502,7 +523,7 @@ function renderDashboard() {
   dom.weekMinutes.textContent = String(stats.weekMinutes);
   dom.totalSessions.textContent = String(stats.totalSessions);
   dom.totalMinutes.textContent = String(stats.totalMinutes);
-  dom.weekLabel.textContent = `${stats.weekMinutes} Minuten`;
+  dom.weekLabel.textContent = t(lang, "dashboard.minutes", stats.weekMinutes);
   dom.clearHistory.hidden = stats.totalSessions === 0;
 
   dom.weekChart.innerHTML = stats.days
@@ -525,16 +546,19 @@ function renderDashboard() {
             <span class="history-check" aria-hidden="true">✓</span>
             <div>
               <strong>${entry.title}</strong>
-              <small>${CATEGORY_LABELS[entry.category] ?? entry.category} · ${date.toLocaleDateString("de-DE", {
-                day: "2-digit",
-                month: "2-digit",
-              })}</small>
+              <small>${data.categoryLabels[entry.category] ?? entry.category} · ${date.toLocaleDateString(
+                locale(lang),
+                {
+                  day: "2-digit",
+                  month: "2-digit",
+                },
+              )}</small>
             </div>
-            <b>${Math.round((entry.seconds ?? 0) / 60)} Min</b>
+            <b>${t(lang, "card.minutes", Math.round((entry.seconds ?? 0) / 60))}</b>
           </div>`;
         })
         .join("")
-    : `<div class="empty-state">Noch keine Session abgeschlossen. Deine erste wartet in den Sessions.</div>`;
+    : `<div class="empty-state">${t(lang, "dashboard.empty")}</div>`;
 }
 
 /* -------------------------------------------------------------- Navigation */
@@ -544,8 +568,8 @@ function setView(view, { scroll = true } = {}) {
   dom.detailView.hidden = view !== "detail";
   dom.playerView.hidden = view !== "player";
   dom.dashboardView.hidden = view !== "dashboard";
-  // training=true: Ablauf und Player passen auf dem iPhone komplett auf den
-  // Schirm, die Seite selbst scrollt dort nicht (siehe style.css).
+  // fit=true: plan and player fill the iPhone screen completely, so the page
+  // itself does not scroll there (see style.css).
   document.body.classList.toggle("fit", view === "detail" || view === "player");
 
   const tab = view === "dashboard" ? "dashboard" : view === "player" || view === "detail" ? "training" : "sessions";
@@ -562,7 +586,7 @@ function openLibrary() {
 }
 
 function openDetail(bundleId) {
-  const bundle = BUNDLES.find((item) => item.id === bundleId);
+  const bundle = data.bundles.find((item) => item.id === bundleId);
   if (!bundle) return;
   state.detailId = bundle.id;
   renderDetail(bundle);
@@ -575,8 +599,8 @@ function openDashboard() {
 }
 
 function openTrainingTab() {
-  // Der Tab wechselt zwischen Ablauf und laufender Session – er ist damit auch
-  // der Weg zurück aus dem Player (dort gibt es keinen Zurück-Knopf mehr).
+  // The tab toggles between plan and running session – which also makes it the
+  // way back out of the player.
   if (state.view === "player") {
     if (timer && timer.isRunning()) timer.pause();
     releaseWakeLock();
@@ -584,16 +608,16 @@ function openTrainingTab() {
     return;
   }
 
-  // Läuft noch eine Session, direkt dorthin zurück – sonst zur Auswahl.
+  // If a session is still running, go straight back to it – otherwise to the picker.
   if (state.hasSession && timer && activeBundle && !timer.state().finished) {
     renderPlayer();
     setView("player");
     return;
   }
   const bundle =
-    BUNDLES.find((item) => item.id === state.detailId) ??
-    BUNDLES.find((item) => item.id === prefs.lastBundleId) ??
-    BUNDLES[0];
+    data.bundles.find((item) => item.id === state.detailId) ??
+    data.bundles.find((item) => item.id === prefs.lastBundleId) ??
+    data.bundles[0];
   openDetail(bundle.id);
 }
 
@@ -615,13 +639,13 @@ function releaseWakeLock() {
   try {
     wakeLock.release();
   } catch {
-    /* egal */
+    /* irrelevant */
   }
   wakeLock = null;
 }
 
-/* ---------------------------------------------------------- Zurückgehen */
-/** Verlässt den Player und hält die Session an. */
+/* ------------------------------------------------------------ Going back */
+/** Leaves the player and pauses the session. */
 function leavePlayer() {
   if (timer && timer.isRunning()) timer.pause();
   releaseWakeLock();
@@ -629,8 +653,8 @@ function leavePlayer() {
 }
 
 /**
- * Wischen nach rechts = zurück – auf dem iPhone die gewohnte Geste, zusätzlich
- * zum Knopf neben dem Titel.
+ * Swiping right = back – the familiar iPhone gesture, in addition to the button
+ * next to the title.
  */
 function attachSwipeBack(element, goBack) {
   let start = null;
@@ -657,7 +681,7 @@ function attachSwipeBack(element, goBack) {
       const dy = touch.clientY - start.y;
       const elapsed = Date.now() - start.time;
       start = null;
-      // Deutlich nach rechts, kaum nach oben/unten, keine lange Geste.
+      // Clearly to the right, barely up or down, not a long gesture.
       if (dx > 70 && Math.abs(dy) < 50 && elapsed < 700) goBack();
     },
     { passive: true },
@@ -679,7 +703,7 @@ dom.brandLink.addEventListener("click", (event) => {
   openLibrary();
 });
 dom.detailStart.addEventListener("click", () => {
-  const bundle = BUNDLES.find((item) => item.id === state.detailId);
+  const bundle = data.bundles.find((item) => item.id === state.detailId);
   if (bundle) openPlayer(bundle, { autostart: true });
 });
 dom.detailsToggle.addEventListener("click", () => {
@@ -717,22 +741,22 @@ dom.libraryResetFilters.addEventListener("click", () => {
   renderLibrary();
 });
 dom.clearHistory.addEventListener("click", () => {
-  if (!window.confirm("Gesamten Trainingsfortschritt löschen?")) return;
+  if (!window.confirm(t(lang, "confirm.clear"))) return;
   clearHistory();
   renderDashboard();
 });
 
-// Sicherung als JSON-Datei: der Fortschritt liegt sonst nur im Speicher dieses
-// Browsers (localStorage) und wäre bei „Websitedaten löschen" verloren.
+// Backup as a JSON file: otherwise the progress only lives in this browser's
+// storage (localStorage) and would be lost when clearing website data.
 dom.exportData.addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(createBackup(), null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `pulse-fortschritt-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = t(lang, "backup.fileName", new Date().toISOString().slice(0, 10));
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
-  dom.liveRegion.textContent = "Sicherung erstellt.";
+  dom.liveRegion.textContent = t(lang, "live.backup");
 });
 
 dom.importData.addEventListener("click", () => dom.importFile.click());
@@ -745,9 +769,9 @@ dom.importFile.addEventListener("change", async () => {
     prefs = loadPrefs();
     syncToggles();
     renderDashboard();
-    dom.liveRegion.textContent = `${result.added} Sessions übernommen, ${result.total} insgesamt.`;
+    dom.liveRegion.textContent = t(lang, "live.imported", result.added, result.total);
   } catch (error) {
-    window.alert(error.message);
+    window.alert(t(lang, `error.${error?.code ?? "invalidFile"}`));
   } finally {
     dom.importFile.value = "";
   }
@@ -755,6 +779,10 @@ dom.importFile.addEventListener("change", async () => {
 dom.completionClose.addEventListener("click", closeCompletion);
 dom.completionModal.addEventListener("click", (event) => {
   if (event.target === dom.completionModal) closeCompletion();
+});
+
+dom.langButtons.forEach((button) => {
+  button.addEventListener("click", () => setLanguage(button.dataset.lang));
 });
 
 dom.navItems.forEach((item) => {
@@ -802,34 +830,81 @@ document.addEventListener("visibilitychange", () => {
 
 function syncToggles() {
   dom.soundToggle.setAttribute("aria-pressed", String(prefs.sound));
-  dom.soundToggle.textContent = prefs.sound ? "Ton" : "Stumm";
-  dom.genderToggle.textContent = prefs.gender === "male" ? "Mann" : "Frau";
+  dom.soundToggle.textContent = prefs.sound ? t(lang, "player.soundOn") : t(lang, "player.soundOff");
+  dom.genderToggle.textContent = t(
+    lang,
+    prefs.gender === "male" ? "player.genderMale" : "player.genderFemale",
+  );
   dom.genderToggle.setAttribute("aria-pressed", String(prefs.gender === "female"));
 }
 
+/* ---------------------------------------------------------------- Language */
+function syncLangSwitch() {
+  dom.langButtons.forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.dataset.lang === lang));
+  });
+}
+
+/**
+ * Puts the active language on everything that is on screen. A running session
+ * keeps its state: only display strings are swapped, the timer is untouched.
+ */
+function applyLanguage() {
+  data = buildData(lang);
+  applyStaticText(lang);
+
+  if (activeBundle) {
+    activeBundle = data.bundles.find((bundle) => bundle.id === activeBundle.id) ?? activeBundle;
+    sequence = bundleSequence(activeBundle, data.exercises);
+  }
+
+  syncLangSwitch();
+  syncToggles();
+  renderCategoryFilters();
+  renderFocusSelect();
+
+  if (state.view === "player") renderPlayer({ announce: false });
+  else if (state.view === "detail") {
+    const bundle = data.bundles.find((item) => item.id === state.detailId);
+    if (bundle) renderDetail(bundle);
+  } else if (state.view === "dashboard") renderDashboard();
+  else renderLibrary();
+
+  if (!dom.completionModal.hidden && lastCompletion) renderCompletion(lastCompletion);
+}
+
+function setLanguage(next) {
+  if (!LANGUAGES.includes(next) || next === lang) return;
+  lang = next;
+  prefs = savePrefs({ lang });
+  applyLanguage();
+}
+
 /* ------------------------------------------------- Installation & Offline */
-// Service Worker: lädt die App-Hülle in den Cache, damit die Verknüpfung auf dem
-// Home-Bildschirm auch ohne Netz startet (Timer und Log funktionieren offline).
+// Service worker: caches the app shell so the home-screen shortcut also starts
+// without a network (timer and log keep working offline).
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {
-      /* z. B. ohne HTTPS – die App läuft trotzdem */
+      /* e.g. without HTTPS – the app still works */
     });
   });
 }
 
 const installed =
   window.matchMedia?.("(display-mode: standalone)").matches === true || window.navigator.standalone === true;
-// Den Hinweis nur zeigen, wo er auch stimmt (iOS-Safari, nicht installiert).
+// Only show the hint where it is actually true (iOS Safari, not installed).
 const isIos = /iPhone|iPad|iPod/.test(window.navigator.userAgent);
 if (!installed && isIos) dom.installHint.hidden = false;
 
 /* ------------------------------------------------------------------- Start */
-// Globaler Video-Rahmen (kommt aus der Framing-Analyse, gilt für alle Übungen).
+// Global video frame (comes from the framing analysis, applies to every exercise).
 document.documentElement.style.setProperty("--panel-aspect", PANEL_ASPECT);
 
+applyStaticText(lang);
 renderCategoryFilters();
 renderFocusSelect();
 renderLibrary();
 syncToggles();
+syncLangSwitch();
 setView("library", { scroll: false });
