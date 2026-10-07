@@ -1,25 +1,29 @@
 # Cloudflare Workers Static Assets: everything NOT part of the shipped app.
 # Without this file Wrangler uploads the whole repo (your log: 2105 files),
 # including node_modules, git history and tooling — then the deploy fails.
-node_modules/
-.git/
-.github/
-.codegraph/
-.freebuff/
-.wrangler/
-scripts/
-data/
-docs/
+# NOTE: patterns without a leading "/" match at ANY depth (gitignore rules).
+# A bare "data/" would also ignore "src/data/" — the exercise catalog the app
+# imports at runtime. So every root entry below is anchored with "/".
+/node_modules/
+/.git/
+/.github/
+/.codegraph/
+/.freebuff/
+/.omo/
+/.wrangler/
+/scripts/
+/data/
+/docs/
 *.log
 .DS_Store
 Thumbs.db
-package.json
-package-lock.json
-wrangler.jsonc
-wrangler.toml
-.assetsignore
-.gitignore
-ATTRIBUTIONS.md
-BUNDLES.md
-README.md
-LICENSE
+/package.json
+/package-lock.json
+/wrangler.jsonc
+/wrangler.toml
+/.assetsignore
+/.gitignore
+/ATTRIBUTIONS.md
+/BUNDLES.md
+/README.md
+/LICENSE
